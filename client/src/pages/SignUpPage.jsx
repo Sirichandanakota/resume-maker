@@ -32,11 +32,10 @@ export default function SignUpPage({ onSignUp, onSwitchToLogin, onBack }) {
       // Store JWT token
       localStorage.setItem('token', response.data.token);
       
-      // Call onSignUp callback
+      // Call onSignUp callback to navigate to templates page
       onSignUp(email, name);
     } catch (err) {
       setError(err.response?.data?.error || 'Sign up failed. Please try again.');
-    } finally {
       setLoading(false);
     }
   };

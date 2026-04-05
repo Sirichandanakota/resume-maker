@@ -3,7 +3,6 @@ import { Mail, Lock, User, ChevronRight, ArrowLeft, FileText, Award } from 'luci
 import { authAPI } from '../services/api';
 
 export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,7 +14,7 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
     setLoading(true);
 
     try {
-      if (!name || !email || !password) {
+      if (!email || !password) {
         setError('Please fill in all fields');
         setLoading(false);
         return;
@@ -26,8 +25,11 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
       // Store JWT token
       localStorage.setItem('token', response.data.token);
       
-      // Call onLogin callback
-      onLogin(email, name);
+      // Extract name from response or use email prefix as fallback
+      const userName = response.data.name || email.split('@')[0];
+      
+      // Call onLogin callback to navigate to templates page
+      onLogin(email, userName);
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Please try again.');
     } finally {
@@ -72,17 +74,6 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
           )}
           
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Full Name</label>
-              <input 
-                type="text" 
-                required 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-                className="w-full p-3.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium bg-slate-50 focus:bg-white" 
-                placeholder="Enter your full name"
-              />
-            </div>
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Email Address</label>
               <input 

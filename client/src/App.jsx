@@ -53,6 +53,7 @@ export default function App() {
     localStorage.removeItem('RM_user_fullname');
     localStorage.removeItem('RM_selected_template');
     localStorage.removeItem('ResumeMaker_Shared_Data'); 
+    localStorage.removeItem('RM_login_error');
 
     setUserEmail('');
     setUserFullName('');

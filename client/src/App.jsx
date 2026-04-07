@@ -11,16 +11,14 @@ export default function App() {
   const [template, setTemplate] = useState(null);
   const [userEmail, setUserEmail] = useState('');
   const [userFullName, setUserFullName] = useState('');
-  const [userToken, setUserToken] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   // Check if user is logged in on mount
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      setUserToken(token);
-      // Could verify token with API here if needed
-      // For now, we just check if token exists
+      // In a real app, you'd fetch the user profile here to get the name/email
+      // For now, we assume if token exists, they are valid
     }
     setIsLoading(false);
   }, []);
@@ -41,15 +39,8 @@ export default function App() {
     localStorage.removeItem('token');
     setUserEmail('');
     setUserFullName('');
-    setUserToken('');
     setCurrentPage('home');
   };
-
-  const handleNavigate = (page) => {
-    setCurrentPage(page);
-  };
-
-  const isAuthenticated = !!localStorage.getItem('token');
 
   if (isLoading) {
     return (
@@ -59,68 +50,68 @@ export default function App() {
     );
   }
 
-  if (currentPage === 'login') {
-    return (
-      <LoginPage 
-        onLogin={handleLogin}
-        onSwitchToSignUp={() => setCurrentPage('signup')}
-        onBack={() => setCurrentPage('home')}
-      />
-    );
-  }
-
-  if (currentPage === 'signup') {
-    return (
-      <SignUpPage 
-        onSignUp={handleSignUp}
-        onSwitchToLogin={() => setCurrentPage('login')}
-        onBack={() => setCurrentPage('home')}
-      />
-    );
-  }
-
-  if (currentPage === 'templates') {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <div className="flex-grow">
-          <TemplatesPage 
-            userEmail={userEmail}
-            userName={userFullName ? userFullName.split(' ')[0] : userEmail?.split('@')[0] || 'User'}
-            onSelect={(tmpl) => {
-              setTemplate(tmpl);
-              setCurrentPage('editor');
-            }}
-            onLogout={handleLogout}
+  // Routing Logic
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'login':
+        return (
+          <LoginPage
+            onLogin={handleLogin}
+            onSwitchToSignUp={() => setCurrentPage('signup')}
             onBack={() => setCurrentPage('home')}
           />
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+        );
+      case 'signup':
+        return (
+          <SignUpPage
+            onSignUp={handleSignUp}
+            onSwitchToLogin={() => setCurrentPage('login')}
+            onBack={() => setCurrentPage('home')}
+          />
+        );
+      case 'templates':
+        return (
+          <div className="flex flex-col min-h-screen">
+            <div className="flex-grow">
+              <TemplatesPage
+                userEmail={userEmail}
+                userName={userFullName} // Passing full name; TemplatePage splits it
+                onSelect={(tmpl) => {
+                  setTemplate(tmpl);
+                  setCurrentPage('editor');
+                }}
+                onLogout={handleLogout}
+                onBack={() => setCurrentPage('home')}
+              />
+            </div>
+            <Footer />
+          </div>
+        );
+      case 'editor':
+        return (
+          <ResumeEditor
+            key={template}
+            template={template}
+            userFullName={userFullName}
+            userEmail={userEmail}
+            onBack={() => setCurrentPage('templates')}
+          />
+        );
+      default:
+        return (
+          <div className="flex flex-col min-h-screen">
+            <div className="flex-grow">
+              <HomePage
+                userEmail={userEmail}
+                onLogout={handleLogout}
+                onNavigate={(page) => setCurrentPage(page)}
+              />
+            </div>
+            <Footer />
+          </div>
+        );
+    }
+  };
 
-  if (currentPage === 'editor') {
-    return (
-      <ResumeEditor 
-        key={template}
-        template={template}
-        userFullName={userFullName}
-        userEmail={userEmail}
-        onBack={() => setCurrentPage('templates')}
-      />
-    );
-  }
-
-  return (
-    <div className="flex flex-col min-h-screen">
-      <div className="flex-grow">
-        <HomePage 
-          userEmail={userEmail}
-          onLogout={handleLogout}
-          onNavigate={handleNavigate}
-        />
-      </div>
-      <Footer />
-    </div>
-  );
+  return renderPage();
 }

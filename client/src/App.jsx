@@ -8,7 +8,6 @@ import Footer from './components/Footer';
 
 export default function App() {
   // --- PERSISTENCE INITIALIZATION ---
-  // We check localStorage immediately so a refresh keeps the user on the same page
   const [currentPage, setCurrentPage] = useState(() => {
     return localStorage.getItem('RM_current_page') || 'home';
   });
@@ -28,7 +27,6 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   // --- PERSISTENCE EFFECT ---
-  // This "Watcher" saves every state change to the browser memory
   useEffect(() => {
     localStorage.setItem('RM_current_page', currentPage);
     localStorage.setItem('RM_user_email', userEmail);
@@ -49,7 +47,6 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    // Clear all persistence data on manual logout
     localStorage.removeItem('token');
     localStorage.removeItem('RM_current_page');
     localStorage.removeItem('RM_user_email');

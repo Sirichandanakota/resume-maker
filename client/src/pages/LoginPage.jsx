@@ -10,7 +10,7 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // STOPS browser refresh
+    e.preventDefault(); 
     setError('');
     setLoading(true);
 
@@ -21,25 +21,21 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
         return;
       }
 
-      // 1. CALL THE API
       const response = await authAPI.login(email, password);
       
-      // 2. SUCCESS: If we get here, the API returned 200 OK
       if (response?.data?.token) {
         localStorage.setItem('token', response.data.token);
       }
       
+      // Use the name from response if available, otherwise use input name
       const fullName = response?.data?.name || name;
-      const firstName = fullName.trim().split(' ')[0]; // Extract first name
+      const firstName = fullName.trim().split(' ')[0];
       
-      // 3. NAVIGATE: Only happens if login is successful
-      onLogin(email, firstName);
+      // Navigate only on success
+      onLogin(email, fullName); // Pass full name to App.jsx to save in state
 
     } catch (err) {
-      // 4. FAILURE: Catch 401, 404, or 500 errors
-      console.error("Login attempt failed:", err);
-      
-      // Update UI with error message instead of navigating
+      console.error("Login Error:", err);
       setError(err?.response?.data?.error || 'Invalid credentials. Please try again.');
     } finally {
       setLoading(false);
@@ -84,45 +80,20 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             <div>
               <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Full Name</label>
-              <input 
-                type="text" 
-                required 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-                className="w-full p-3 sm:p-3.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium bg-slate-50 focus:bg-white text-sm sm:text-base" 
-                placeholder="Enter your full name" 
-              />
+              <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full p-3 sm:p-3.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium bg-slate-50 focus:bg-white text-sm sm:text-base" placeholder="Enter your full name" />
             </div>
             
             <div>
               <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Email Address</label>
-              <input 
-                type="email" 
-                required 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
-                className="w-full p-3 sm:p-3.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium bg-slate-50 focus:bg-white text-sm sm:text-base" 
-                placeholder="username@example.com" 
-              />
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3 sm:p-3.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium bg-slate-50 focus:bg-white text-sm sm:text-base" placeholder="username@example.com" />
             </div>
             
             <div>
               <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Password</label>
-              <input 
-                type="password" 
-                required 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                className="w-full p-3 sm:p-3.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium bg-slate-50 focus:bg-white text-sm sm:text-base" 
-                placeholder="Enter Password" 
-              />
+              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 sm:p-3.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium bg-slate-50 focus:bg-white text-sm sm:text-base" placeholder="Enter Password" />
             </div>
             
-            <button 
-              type="submit" 
-              disabled={loading} 
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 sm:py-4 px-4 rounded-xl flex items-center justify-center gap-2 transition-all mt-4 shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
-            >
+            <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 sm:py-4 px-4 rounded-xl flex items-center justify-center gap-2 transition-all mt-4 shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed">
               {loading ? 'Signing In...' : 'Sign In'} {!loading && <ChevronRight size={20} />}
             </button>
           </form>

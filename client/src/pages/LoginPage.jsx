@@ -10,8 +10,13 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevents page reload
+    // 1. PREVENT DEFAULT: This is the most important line. 
+    // It stops the browser from reloading the page and wiping your state.
+    e.preventDefault(); 
+    
     setLoading(true);
+    // We do NOT clear setError('') here. 
+    // This ensures the old error stays visible while the new request is "loading".
 
     try {
       if (!name || !email || !password) {
@@ -20,21 +25,23 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
         return;
       }
 
-      // API Call to your backend
       const response = await authAPI.login(email, password);
       
       if (response?.data?.token) {
         localStorage.setItem('token', response.data.token);
         const fullName = response.data.name || name;
         
-        setError(''); // Clear error before navigating
+        // ONLY clear error upon absolute success
+        setError(''); 
         onLogin(email, fullName);
       }
     } catch (err) {
       console.error("Login attempt failed:", err);
-      // ERROR STAYS: This updates the local state. 
-      // Since App.jsx doesn't re-render on error, this message stays visible.
-      setError(err.response?.data?.error || 'Invalid email or password. Please try again.');
+      
+      // 2. STICKY ERROR: We set the error here. 
+      // Since we don't navigate away, this state remains active in the UI.
+      const errorMessage = err.response?.data?.error || 'Invalid email or password. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -42,7 +49,6 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
 
   return (
     <div className="h-screen w-full flex font-sans bg-white relative overflow-hidden">
-      {/* Navigation Button */}
       <button 
         type="button" 
         onClick={onBack} 
@@ -51,17 +57,15 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
         <ArrowLeft size={18} /> <span>Back to Home</span>
       </button>
 
-      {/* Left Decorative Side (Laptop only) */}
       <div className="hidden lg:flex w-1/2 bg-blue-600 items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
         <div className="z-10 text-white text-center px-12">
           <FileText size={80} className="mx-auto mb-6 text-blue-200" />
-          <h2 className="text-4xl font-extrabold mb-4">ResumeMaker</h2>
+          <h2 className="text-4xl font-extrabold mb-4 text-white">ResumeMaker</h2>
           <p className="text-blue-100 text-lg leading-relaxed">Log in to manage your professional identity.</p>
         </div>
       </div>
 
-      {/* Right Form Side */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-slate-50">
         <div className="w-full max-w-md bg-white p-6 sm:p-10 rounded-3xl shadow-xl border border-slate-100 mt-10 lg:mt-0">
           <div className="text-center mb-6">
@@ -71,11 +75,11 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">Welcome Back</h1>
           </div>
 
-          {/* PERSISTENT ERROR MESSAGE */}
+          {/* THE ERROR BOX: Designed to stay visible until a successful login */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg flex items-center gap-3">
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
               <AlertCircle className="text-red-500 shrink-0" size={20} />
-              <p className="text-red-700 text-sm font-bold">{error}</p>
+              <p className="text-red-700 text-sm font-bold leading-tight">{error}</p>
             </div>
           )}
           
@@ -99,7 +103,7 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
                 className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:border-blue-500 transition-all font-medium bg-slate-50" 
-                placeholder="email@example.com" 
+                placeholder="username@example.com" 
               />
             </div>
             <div>
@@ -110,16 +114,16 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:border-blue-500 transition-all font-medium bg-slate-50" 
-                placeholder="••••••••" 
+                placeholder="Enter Password" 
               />
             </div>
             
             <button 
               type="submit" 
               disabled={loading} 
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all mt-4 shadow-lg disabled:opacity-70"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all mt-4 shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing In...' : 'Sign In'} {!loading && <ChevronRight size={20} />}
+              {loading ? 'Verifying...' : 'Sign In'} {!loading && <ChevronRight size={20} />}
             </button>
           </form>
           

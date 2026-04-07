@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Mail, Phone, MapPin, Link2, Plus, Trash2, FileText, ArrowLeft, Image as ImageIcon, Download, GripVertical, Eye, EyeOff, AlertTriangle, Undo2, Redo2, X } from 'lucide-react';
 
-// --- EXACT DEFAULTS ---
+// --- EXACT SHARED DEFAULTS ---
 const DEFAULT_SHARED_CONTENT = {
   personalInfo: { name: 'Rahul Sharma', email: 'rahul.sharma@example.com', phone: '+91 98765 43210', location: 'Bangalore, India' },
   links: [{ id: 1, label: 'LinkedIn', url: 'linkedin.com/in/rahulsharma' }],
@@ -28,7 +28,7 @@ const DEFAULT_SHARED_CONTENT = {
   customSectionsData: { 'custom-default': { title: 'Languages / Interests', items: [{ id: 1, title: '', subtitle: '', description: '' }] } }
 };
 
-// 1-COLUMN ISOLATED DEFAULTS
+// --- ISOLATED 1-COLUMN SETTINGS ---
 const DEFAULT_SETTINGS_1_COL = {
   themeColor: '#31414e', themeTextColor: 'black', fontSizeNum: 9, fontFamily: "'Times New Roman', serif", headSizeSelection: '0', customHeadSize: 0, headerAlignment: 'left', photoAlignment: 'left', pageSelection: '1', customPageCount: 5,
   sections: [
@@ -43,7 +43,7 @@ const DEFAULT_SETTINGS_1_COL = {
   ]
 };
 
-// 2-COLUMN ISOLATED DEFAULTS
+// --- ISOLATED 2-COLUMN SETTINGS ---
 const DEFAULT_SETTINGS_2_COL = {
   themeColor: '#31414e', themeTextColor: 'white', fontSizeNum: 12, fontFamily: "'Times New Roman', serif", headSizeSelection: '32', customHeadSize: 32, headerAlignment: 'left', photoAlignment: 'left', pageSelection: '1', customPageCount: 5,
   sections: [
@@ -58,62 +58,73 @@ const DEFAULT_SETTINGS_2_COL = {
   ]
 };
 
-// --- CRASH-PROOF SAFE PARSER ---
-const safeParse = (key, defaultObj) => {
+// --- CRASH-PROOF PARSERS ---
+const getSharedData = () => {
   try {
-    const data = localStorage.getItem(key);
-    if (!data) return defaultObj;
-    const parsed = JSON.parse(data);
-    if (typeof parsed !== 'object' || parsed === null) return defaultObj;
-    return parsed;
+    const raw = localStorage.getItem('ResumeMaker_Shared_Content');
+    if (!raw) return DEFAULT_SHARED_CONTENT;
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_SHARED_CONTENT, ...parsed, personalInfo: { ...DEFAULT_SHARED_CONTENT.personalInfo, ...(parsed?.personalInfo || {}) } };
   } catch (e) {
-    return defaultObj;
+    return DEFAULT_SHARED_CONTENT;
+  }
+};
+
+const getSettingsData = (templateType) => {
+  const defaults = templateType === '1-column' ? DEFAULT_SETTINGS_1_COL : DEFAULT_SETTINGS_2_COL;
+  try {
+    const raw = localStorage.getItem(`ResumeMaker_Settings_${templateType}`);
+    if (!raw) return defaults;
+    const parsed = JSON.parse(raw);
+    return { ...defaults, ...parsed };
+  } catch (e) {
+    return defaults;
   }
 };
 
 export default function ResumeEditor({ template, userFullName, userEmail, onBack }) {
-  // --- LOAD DATA SAFELY ---
-  const initShared = safeParse('ResumeMaker_Shared_Content', DEFAULT_SHARED_CONTENT);
-  const initSettings = safeParse(`ResumeMaker_Settings_${template}`, template === '1-column' ? DEFAULT_SETTINGS_1_COL : DEFAULT_SETTINGS_2_COL);
+  // LOAD DATA
+  const initShared = getSharedData();
+  const initSettings = getSettingsData(template);
 
-  // --- ISOLATED SETTINGS (Saved per template) ---
-  const [pageSelection, setPageSelection] = useState(() => initSettings.pageSelection || '1'); 
-  const [customPageCount, setCustomPageCount] = useState(() => initSettings.customPageCount || 5);
-  const pageCount = pageSelection === 'custom' ? customPageCount : parseInt(pageSelection);
+  // --- ISOLATED SETTINGS (Template Specific) ---
+  const [pageSelection, setPageSelection] = useState(() => initSettings.pageSelection); 
+  const [customPageCount, setCustomPageCount] = useState(() => initSettings.customPageCount);
+  const pageCount = pageSelection === 'custom' ? customPageCount : parseInt(pageSelection) || 1;
 
-  const [fontSizeNum, setFontSizeNum] = useState(() => initSettings.fontSizeNum || (template === '1-column' ? 9 : 12)); 
-  const [fontFamily, setFontFamily] = useState(() => initSettings.fontFamily || "'Times New Roman', serif");
-  const [themeColor, setThemeColor] = useState(() => initSettings.themeColor || '#31414e'); 
-  const [themeTextColor, setThemeTextColor] = useState(() => initSettings.themeTextColor || (template === '1-column' ? 'black' : 'white')); 
+  const [fontSizeNum, setFontSizeNum] = useState(() => initSettings.fontSizeNum); 
+  const [fontFamily, setFontFamily] = useState(() => initSettings.fontFamily);
+  const [themeColor, setThemeColor] = useState(() => initSettings.themeColor); 
+  const [themeTextColor, setThemeTextColor] = useState(() => initSettings.themeTextColor); 
   
-  const [headSizeSelection, setHeadSizeSelection] = useState(() => initSettings.headSizeSelection || (template === '1-column' ? '0' : '32')); 
-  const [customHeadSize, setCustomHeadSize] = useState(() => initSettings.customHeadSize || 32);
-  const [headerAlignment, setHeaderAlignment] = useState(() => initSettings.headerAlignment || 'left');
-  const [photoAlignment, setPhotoAlignment] = useState(() => initSettings.photoAlignment || 'left');
-  const [sections, setSections] = useState(() => initSettings.sections || (template === '1-column' ? DEFAULT_SETTINGS_1_COL.sections : DEFAULT_SETTINGS_2_COL.sections));
+  const [headSizeSelection, setHeadSizeSelection] = useState(() => initSettings.headSizeSelection); 
+  const [customHeadSize, setCustomHeadSize] = useState(() => initSettings.customHeadSize);
+  const [headerAlignment, setHeaderAlignment] = useState(() => initSettings.headerAlignment);
+  const [photoAlignment, setPhotoAlignment] = useState(() => initSettings.photoAlignment);
+  const [sections, setSections] = useState(() => initSettings.sections);
 
-  // --- SHARED DATA (Transfers across templates seamlessly) ---
+  // --- SHARED DATA (Transfers Seamlessly) ---
   const [personalInfo, setPersonalInfo] = useState(() => {
-    const info = { ...DEFAULT_SHARED_CONTENT.personalInfo, ...(initShared.personalInfo || {}) };
+    const info = { ...initShared.personalInfo };
     if (userFullName && info.name === 'Rahul Sharma') info.name = userFullName;
     if (userEmail && info.email === 'rahul.sharma@example.com') info.email = userEmail;
     return info;
   });
 
-  const [links, setLinks] = useState(() => initShared.links || DEFAULT_SHARED_CONTENT.links);
+  const [links, setLinks] = useState(() => initShared.links || []);
   const [showPhoto, setShowPhoto] = useState(() => initShared.showPhoto ?? false);
   const [photoUrl, setPhotoUrl] = useState(() => initShared.photoUrl || '');
   const [photoFileName, setPhotoFileName] = useState(() => initShared.photoFileName || '');
-  const [summaryContent, setSummaryContent] = useState(() => initShared.summaryContent || DEFAULT_SHARED_CONTENT.summaryContent);
-  const [education, setEducation] = useState(() => initShared.education || DEFAULT_SHARED_CONTENT.education);
-  const [experience, setExperience] = useState(() => initShared.experience || DEFAULT_SHARED_CONTENT.experience);
-  const [projects, setProjects] = useState(() => initShared.projects || DEFAULT_SHARED_CONTENT.projects);
+  const [summaryContent, setSummaryContent] = useState(() => initShared.summaryContent || '');
+  const [education, setEducation] = useState(() => initShared.education || []);
+  const [experience, setExperience] = useState(() => initShared.experience || []);
+  const [projects, setProjects] = useState(() => initShared.projects || []);
   const [skillsFormat, setSkillsFormat] = useState(() => initShared.skillsFormat || 'categorized');
-  const [skillsContent, setSkillsContent] = useState(() => initShared.skillsContent || DEFAULT_SHARED_CONTENT.skillsContent);
-  const [skillsData, setSkillsData] = useState(() => initShared.skillsData || DEFAULT_SHARED_CONTENT.skillsData);
-  const [certifications, setCertifications] = useState(() => initShared.certifications || DEFAULT_SHARED_CONTENT.certifications);
-  const [achievements, setAchievements] = useState(() => initShared.achievements || DEFAULT_SHARED_CONTENT.achievements);
-  const [customSectionsData, setCustomSectionsData] = useState(() => initShared.customSectionsData || DEFAULT_SHARED_CONTENT.customSectionsData);
+  const [skillsContent, setSkillsContent] = useState(() => initShared.skillsContent || '');
+  const [skillsData, setSkillsData] = useState(() => initShared.skillsData || []);
+  const [certifications, setCertifications] = useState(() => initShared.certifications || []);
+  const [achievements, setAchievements] = useState(() => initShared.achievements || []);
+  const [customSectionsData, setCustomSectionsData] = useState(() => initShared.customSectionsData || {});
 
   // App State
   const [activeSection, setActiveSection] = useState('basic-info');
@@ -184,7 +195,7 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
       setCustomHeadSize(s.settings.customHeadSize || 0);
       setHeaderAlignment(s.settings.headerAlignment || 'left'); 
       setPhotoAlignment(s.settings.photoAlignment || 'left');
-    } catch(e) { console.error("Error restoring state"); }
+    } catch(e) {}
   };
 
   // --- OVERFLOW DETECTION ---
@@ -221,13 +232,13 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
     setSections(p => [...(p || []), { id, title: 'New Custom Section', visible: true, column: 'left', timeline: false }]);
   };
   const updateCustomSectionTitle = (id, val) => {
-    setCustomSectionsData(p => ({ ...p, [id]: { ...p[id], title: val } }));
+    setCustomSectionsData(p => ({ ...p, [id]: { ...(p[id] || {}), title: val } }));
     setSections(p => (p || []).map(s => s.id === id ? { ...s, title: val || 'Custom Section' } : s));
   };
-  const updateCustomItem = (sid, iid, f, v) => { setCustomSectionsData(p => ({ ...p, [sid]: { ...p[sid], items: (p[sid].items || []).map(i => i.id === iid ? { ...i, [f]: v } : i) } })); };
+  const updateCustomItem = (sid, iid, f, v) => { setCustomSectionsData(p => ({ ...p, [sid]: { ...(p[sid] || {}), items: ((p[sid] || {}).items || []).map(i => i.id === iid ? { ...i, [f]: v } : i) } })); };
   const deleteCustomSection = (id) => { setSections(p => (p || []).filter(s => s.id !== id)); setCustomSectionsData(p => { const n = { ...p }; delete n[id]; return n; }); };
-  const addCustomItem = (sid) => { setCustomSectionsData(p => ({ ...p, [sid]: { ...p[sid], items: [...(p[sid].items || []), { id: Date.now(), title: '', subtitle: '', description: '' }] } })); };
-  const removeCustomItem = (sid, iid) => { setCustomSectionsData(p => ({ ...p, [sid]: { ...p[sid], items: (p[sid].items || []).filter(i => i.id !== iid) } })); };
+  const addCustomItem = (sid) => { setCustomSectionsData(p => ({ ...p, [sid]: { ...(p[sid] || {}), items: [...((p[sid] || {}).items || []), { id: Date.now(), title: '', subtitle: '', description: '' }] } })); };
+  const removeCustomItem = (sid, iid) => { setCustomSectionsData(p => ({ ...p, [sid]: { ...(p[sid] || {}), items: ((p[sid] || {}).items || []).filter(i => i.id !== iid) } })); };
 
   // Reorder / Toggles
   const [draggedIdx, setDraggedIdx] = useState(null);
@@ -247,13 +258,14 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
       const element = document.getElementById('resume-preview-content');
       const clone = element.cloneNode(true);
       
-      // Strip everything that could cause a white line/border artifact
+      // Force remove any styling that causes artifacts (shadows, borders, scaling margins)
       clone.style.margin = '0px';
       clone.style.padding = '0px';
       clone.style.boxShadow = 'none';
       clone.style.border = 'none';
       clone.style.outline = 'none';
       clone.style.borderRadius = '0px';
+      clone.style.transform = 'none'; // Prevent inherited scaling
       clone.style.width = '816px';
       clone.style.height = `${pageCount * 1056}px`;
 
@@ -264,7 +276,7 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
 
       const base = personalInfo?.name ? personalInfo.name.trim().replace(/\s+/g, '_') : 'Resume';
       
-      // Exact pixel formatting + forced zero coordinates to fix left-alignment gap
+      // Explicit X and Y coordinates fixed to 0 guarantees exact edge alignment
       const opt = { 
         margin: 0, 
         filename: `${base}.pdf`, 
@@ -274,6 +286,7 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
           useCORS: true, 
           logging: false, 
           width: 816, 
+          height: pageCount * 1056,
           windowWidth: 816,
           x: 0, 
           y: 0, 
@@ -371,7 +384,7 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
       case 'education': return (education || []).length > 0 && <section key="edu" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className={`font-bold ${titleMb} uppercase border-b pb-1`}>Education</h2><div className="space-y-0">{(education || []).map(e => renderTimelineItem(<div className="block"><div className="flex justify-between items-baseline"><h3 style={{...sLg, color: hColor}} className="font-bold">{e.school}</h3>{template==='1-column'&&<span style={{...sSm, color: mColor}} className="font-bold whitespace-nowrap ml-auto">{e.from} - {e.to}</span>}</div><div style={{...sSm, color: pColor}} className="uppercase">{e.degree} {template==='2-column'&&<span className="font-bold">| {e.from} - {e.to}</span>}</div>{e.cgpa && <div style={{...sSm, color: pColor}}>Current CGPA: {e.cgpa}</div>}</div>, e.id, section.timeline, mode))}</div></section>;
       case 'experience': return (experience || []).length > 0 && <section key="exp" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className={`font-bold ${titleMb} uppercase border-b pb-1`}>Experience</h2><div className="space-y-0">{(experience || []).map(e => renderTimelineItem(<div className="block"><div className="flex justify-between items-baseline"><h3 style={{...sLg, color: hColor}} className="font-bold">{e.role}</h3>{template==='1-column'&&<span style={{...sSm, color: mColor}} className="font-bold whitespace-nowrap ml-auto">{e.from} - {e.to}</span>}</div><div style={{...sSm, color: pColor}} className="uppercase">{e.company} {template==='2-column'&&<span className="font-bold">| {e.from} - {e.to}</span>}</div>{renderDescription(e.description, e.isBullet, pColor, sBase)}</div>, e.id, section.timeline, mode))}</div></section>;
       case 'projects': return (projects || []).length > 0 && <section key="proj" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className={`font-bold ${titleMb} uppercase border-b pb-1`}>Projects</h2><div className="space-y-0">{(projects || []).map(e => renderTimelineItem(<div className="block"><h3 style={{...sLg, color: hColor}} className="font-bold">{e.title}</h3><div style={{...sSm, color: mColor}} className="italic">{e.tech}</div>{renderDescription(e.description, e.isBullet, pColor, sBase)}</div>, e.id, section.timeline, mode))}</div></section>;
-      case 'skills': return (skillsFormat === 'categorized' ? (skillsData || []).length > 0 : skillsContent) && <div key="skills" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className={`font-bold ${titleMb} uppercase border-b pb-1`}>Skills</h2>{renderTimelineItem(skillsFormat === 'categorized' ? <div className="space-y-1">{(skillsData || []).map(i => i.category && i.skills && <div key={`sk-${i.id}`} style={{...sBase, color: pColor}}><span style={{color: hColor}} className="mr-1 font-bold">{i.category}:</span>{(i.skills || '').split(',').join(' | ')}</div>)}</div> : <div style={{...sBase, color: pColor}}>{(skillsContent || '').split(',').join(' | ')}</div>, 'sk', section.timeline, mode)}</div>;
+      case 'skills': return (skillsFormat === 'categorized' ? (skillsData || []).length > 0 : skillsContent) && <div key="skills" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className={`font-bold ${titleMb} uppercase border-b pb-1`}>Skills</h2>{renderTimelineItem(skillsFormat === 'categorized' ? <div className="space-y-1">{(skillsData || []).map(i => i.category && i.skills && <div key={`sk-${i.id}`} style={{...sBase, color: pColor}}><span style={{color: hColor}} className="mr-1 font-bold">{i.category}:</span>{(i.skills || '').split('|').map(s=>s.trim()).join(' | ')}</div>)}</div> : <div style={{...sBase, color: pColor}}>{(skillsContent || '').split(',').join(' | ')}</div>, 'sk', section.timeline, mode)}</div>;
       case 'certifications': return (certifications || []).length > 0 && <div key="cert" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className="font-bold uppercase border-b pb-1">Certifications</h2><div className="space-y-0">{(certifications || []).map(c => c.text && renderTimelineItem(<div style={{...sBase, color: pColor}}>{!section.timeline && <span style={{color: hColor}} className="mr-2">•</span>}{c.text}</div>, c.id, section.timeline, mode, 'mb-1', 'pb-2'))}</div></div>;
       case 'achievements': return (achievements || []).length > 0 && <div key="ach" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className="font-bold uppercase border-b pb-1">Achievements</h2><div className="space-y-0">{(achievements || []).map(c => c.text && renderTimelineItem(<div style={{...sBase, color: pColor}}>{!section.timeline && <span style={{color: hColor}} className="mr-2">•</span>}{c.text}</div>, c.id, section.timeline, mode, 'mb-1', 'pb-2'))}</div></div>;
       default: return null;
@@ -413,7 +426,7 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
       case 'education': return <div className="space-y-4">{(education || []).map(e=><div key={e.id} className="p-4 bg-white border rounded relative group"><button onClick={()=>handleArrayRemove(setEducation, e.id)} className="absolute top-4 right-4 text-red-400 opacity-0 group-hover:opacity-100"><Trash2 size={18}/></button><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="md:col-span-2"><label className="block text-sm font-medium text-gray-600 mb-1">School</label><input value={e.school} onChange={v=>handleArrayUpdate(setEducation, e.id, 'school', v.target.value)} className="w-full p-2 border rounded outline-none"/></div><div className="md:col-span-2"><label className="block text-sm font-medium text-gray-600 mb-1">Degree</label><input value={e.degree} onChange={v=>handleArrayUpdate(setEducation, e.id, 'degree', v.target.value)} className="w-full p-2 border rounded outline-none"/></div><div><label className="block text-sm font-medium text-gray-600 mb-1">From</label><input value={e.from} onChange={v=>handleArrayUpdate(setEducation, e.id, 'from', v.target.value)} className="w-full p-2 border rounded outline-none"/></div><div><label className="block text-sm font-medium text-gray-600 mb-1">To</label><input value={e.to} onChange={v=>handleArrayUpdate(setEducation, e.id, 'to', v.target.value)} className="w-full p-2 border rounded outline-none"/></div><div className="md:col-span-2"><label className="block text-sm font-medium text-gray-600 mb-1">CGPA</label><input value={e.cgpa} onChange={v=>handleArrayUpdate(setEducation, e.id, 'cgpa', v.target.value)} className="w-full p-2 border rounded outline-none"/></div></div></div>)}<button onClick={()=>handleArrayAdd(setEducation, {degree:'', school:'', from:'', to:'', cgpa:''})} className="text-blue-600 text-sm font-medium flex items-center gap-1"><Plus size={16}/> Add Education</button></div>;
       case 'experience': return <div className="space-y-4">{(experience || []).map(e=><div key={e.id} className="p-4 bg-white border rounded relative group"><button onClick={()=>handleArrayRemove(setExperience, e.id)} className="absolute top-4 right-4 text-red-400 opacity-0 group-hover:opacity-100"><Trash2 size={18}/></button><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="md:col-span-2"><label className="block text-sm font-medium text-gray-600 mb-1">Role</label><input value={e.role} onChange={v=>handleArrayUpdate(setExperience, e.id, 'role', v.target.value)} className="w-full p-2 border rounded outline-none"/></div><div className="md:col-span-2"><label className="block text-sm font-medium text-gray-600 mb-1">Company</label><input value={e.company} onChange={v=>handleArrayUpdate(setExperience, e.id, 'company', v.target.value)} className="w-full p-2 border rounded outline-none"/></div><div><label className="block text-sm font-medium text-gray-600 mb-1">From</label><input value={e.from} onChange={v=>handleArrayUpdate(setExperience, e.id, 'from', v.target.value)} className="w-full p-2 border rounded outline-none"/></div><div><label className="block text-sm font-medium text-gray-600 mb-1">To</label><input value={e.to} onChange={v=>handleArrayUpdate(setExperience, e.id, 'to', v.target.value)} className="w-full p-2 border rounded outline-none"/></div><div className="md:col-span-2"><div className="flex items-center justify-between mb-1"><label className="text-sm font-medium text-gray-600">Description</label><label className="flex items-center gap-1.5"><input type="checkbox" checked={e.isBullet!==false} onChange={c=>handleArrayUpdate(setExperience, e.id, 'isBullet', c.target.checked)} className="w-3.5 h-3.5"/><span className="text-xs">Bullets</span></label></div><textarea value={e.description} onChange={v=>handleArrayUpdate(setExperience, e.id, 'description', v.target.value)} rows={3} className="w-full p-2 border rounded outline-none"/></div></div></div>)}<button onClick={()=>handleArrayAdd(setExperience, {role:'', company:'', from:'', to:'', description:'', isBullet:true})} className="text-blue-600 text-sm font-medium flex items-center gap-1"><Plus size={16}/> Add Experience</button></div>;
       case 'projects': return <div className="space-y-4">{(projects || []).map(e=><div key={e.id} className="p-4 bg-white border rounded relative group"><button onClick={()=>handleArrayRemove(setProjects, e.id)} className="absolute top-4 right-4 text-red-400 opacity-0 group-hover:opacity-100"><Trash2 size={18}/></button><div className="grid gap-4"><div><label className="block text-sm font-medium text-gray-600 mb-1">Title</label><input value={e.title} onChange={v=>handleArrayUpdate(setProjects, e.id, 'title', v.target.value)} className="w-full p-2 border rounded outline-none"/></div><div><label className="block text-sm font-medium text-gray-600 mb-1">Tech</label><input value={e.tech} onChange={v=>handleArrayUpdate(setProjects, e.id, 'tech', v.target.value)} className="w-full p-2 border rounded outline-none"/></div><div><div className="flex items-center justify-between mb-1"><label className="text-sm font-medium text-gray-600">Description</label><label className="flex items-center gap-1.5"><input type="checkbox" checked={e.isBullet!==false} onChange={c=>handleArrayUpdate(setProjects, e.id, 'isBullet', c.target.checked)} className="w-3.5 h-3.5"/><span className="text-xs">Bullets</span></label></div><textarea value={e.description} onChange={v=>handleArrayUpdate(setProjects, e.id, 'description', v.target.value)} rows={2} className="w-full p-2 border rounded outline-none"/></div></div></div>)}<button onClick={()=>handleArrayAdd(setProjects, {title:'', tech:'', description:'', isBullet:true})} className="text-blue-600 text-sm font-medium flex items-center gap-1"><Plus size={16}/> Add Project</button></div>;
-      case 'skills': return <div className="space-y-4"><div className="flex justify-between border-b pb-2"><label className="text-sm font-medium text-gray-600">Format</label><select value={skillsFormat} onChange={e=>setSkillsFormat(e.target.value)} className="p-1 border rounded text-xs outline-none"><option value="categorized">Categorized</option><option value="simple">Simple</option></select></div>{skillsFormat==='categorized'?<div className="space-y-3">{(skillsData || []).map(s=><div key={s.id} className="flex flex-col sm:flex-row gap-3 bg-white p-3 border rounded relative group"><button onClick={()=>handleArrayRemove(setSkillsData, s.id)} className="absolute top-2 right-2 text-red-400 opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button><div className="sm:w-1/3"><label className="block text-xs font-medium text-gray-500 mb-1">Category</label><input value={s.category} onChange={e=>handleArrayUpdate(setSkillsData, s.id, 'category', e.target.value)} className="w-full p-2 text-sm border rounded outline-none"/></div><div className="sm:w-2/3 pr-6"><label className="block text-xs font-medium text-gray-500 mb-1">Skills</label><input value={s.skills} onChange={e=>handleArrayUpdate(setSkillsData, s.id, 'skills', e.target.value)} className="w-full p-2 text-sm border rounded outline-none"/></div></div>)}<button onClick={()=>handleArrayAdd(setSkillsData, {category:'', skills:''})} className="text-blue-600 text-sm font-medium flex items-center gap-1"><Plus size={16}/> Add Category</button></div>:<div><label className="block text-xs font-medium text-gray-500 mb-1">Skills Content</label><textarea value={skillsContent} onChange={e=>setSkillsContent(e.target.value)} rows={3} className="w-full p-2 border rounded outline-none"/></div>}</div>;
+      case 'skills': return <div className="space-y-4"><div className="flex justify-between border-b pb-2"><label className="text-sm font-medium text-gray-600">Format</label><select value={skillsFormat} onChange={e=>setSkillsFormat(e.target.value)} className="p-1 border rounded text-xs outline-none"><option value="categorized">Categorized</option><option value="simple">Simple</option></select></div>{skillsFormat==='categorized'?<div className="space-y-3">{(skillsData || []).map(s=><div key={s.id} className="flex flex-col sm:flex-row gap-3 bg-white p-3 border rounded relative group"><button onClick={()=>handleArrayRemove(setSkillsData, s.id)} className="absolute top-2 right-2 text-red-400 opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button><div className="sm:w-1/3"><label className="block text-xs font-medium text-gray-500 mb-1">Category</label><input value={s.category} onChange={e=>handleArrayUpdate(setSkillsData, s.id, 'category', e.target.value)} className="w-full p-2 text-sm border rounded outline-none"/></div><div className="sm:w-2/3 pr-6"><label className="block text-xs font-medium text-gray-500 mb-1">Skills (Use | to separate)</label><input value={s.skills} onChange={e=>handleArrayUpdate(setSkillsData, s.id, 'skills', e.target.value)} className="w-full p-2 text-sm border rounded outline-none"/></div></div>)}<button onClick={()=>handleArrayAdd(setSkillsData, {category:'', skills:''})} className="text-blue-600 text-sm font-medium flex items-center gap-1"><Plus size={16}/> Add Category</button></div>:<div><label className="block text-xs font-medium text-gray-500 mb-1">Skills Content</label><textarea value={skillsContent} onChange={e=>setSkillsContent(e.target.value)} rows={3} className="w-full p-2 border rounded outline-none"/></div>}</div>;
       case 'certifications': return <div className="space-y-2">{(certifications || []).map(c=><div key={c.id} className="flex gap-2 items-center bg-white p-2 border rounded"><input value={c.text} onChange={e=>handleArrayUpdate(setCertifications, c.id, 'text', e.target.value)} className="flex-1 p-1 outline-none" placeholder="Certification"/><button onClick={()=>handleArrayRemove(setCertifications, c.id)} className="text-red-400"><Trash2 size={18}/></button></div>)}<button onClick={()=>handleArrayAdd(setCertifications, {text:''})} className="text-blue-600 text-sm font-medium flex items-center gap-1"><Plus size={16}/> Add Cert</button></div>;
       case 'achievements': return <div className="space-y-2">{(achievements || []).map(a=><div key={a.id} className="flex gap-2 items-center bg-white p-2 border rounded"><input value={a.text} onChange={e=>handleArrayUpdate(setAchievements, a.id, 'text', e.target.value)} className="flex-1 p-1 outline-none" placeholder="Achievement"/><button onClick={()=>handleArrayRemove(setAchievements, a.id)} className="text-red-400"><Trash2 size={18}/></button></div>)}<button onClick={()=>handleArrayAdd(setAchievements, {text:''})} className="text-blue-600 text-sm font-medium flex items-center gap-1"><Plus size={16}/> Add Achievement</button></div>;
       default: return null;
@@ -487,29 +500,29 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
               <div className="bg-slate-50 p-2 rounded border">
                 <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Head Size</span>
-                <select value={headSizeSelection} onChange={e=>setHeadSizeSelection(e.target.value)} className="w-full text-xs p-1 border rounded"><option value="0">None</option><option value="32">Normal</option><option value="custom">Custom...</option></select>
+                <select value={headSizeSelection} onChange={e=>setHeadSizeSelection(e.target.value)} className="w-full text-xs p-1 border rounded outline-none bg-white"><option value="0">None</option><option value="32">Normal</option><option value="custom">Custom...</option></select>
                 {headSizeSelection==='custom'&&<input type="number" value={customHeadSize} onChange={e=>setCustomHeadSize(Number(e.target.value))} className="w-full mt-1 text-xs border rounded p-1"/>}
               </div>
               <div className="bg-slate-50 p-2 rounded border">
                 <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Theme</span>
-                <div className="flex gap-2 items-center"><input type="color" value={themeColor} onChange={e=>setThemeColor(e.target.value)} className="w-6 h-6 border-0 cursor-pointer p-0 bg-transparent"/><select value={themeTextColor} onChange={e=>setThemeTextColor(e.target.value)} className="text-[10px] p-1 border rounded"><option value="black">Dark Txt</option><option value="white">Light Txt</option></select></div>
+                <div className="flex gap-2 items-center"><input type="color" value={themeColor} onChange={e=>setThemeColor(e.target.value)} className="w-6 h-6 border-0 cursor-pointer p-0 bg-transparent"/><select value={themeTextColor} onChange={e=>setThemeTextColor(e.target.value)} className="text-[10px] p-1 border rounded outline-none bg-white"><option value="black">Dark Txt</option><option value="white">Light Txt</option></select></div>
               </div>
               <div className="bg-slate-50 p-2 rounded border">
                 <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Font</span>
                 <div className="flex gap-1 items-center">
                   <input type="number" min="8" max="16" value={fontSizeNum} onChange={e=>setFontSizeNum(Number(e.target.value))} className="w-10 text-xs border rounded p-1 text-center" />
-                  <select value={fontFamily} onChange={e=>setFontFamily(e.target.value)} className="w-full text-[10px] p-1 border rounded outline-none">
+                  <select value={fontFamily} onChange={e=>setFontFamily(e.target.value)} className="w-full text-[10px] p-1 border rounded outline-none bg-white">
                     <option value="'Garamond', serif">Garamond</option>
-                    <option value="'Times New Roman', serif">Times New</option>
-                    <option value="'Arial', sans-serif">Arial</option>
+                    <option value="'Times New Roman', serif">Times New Roman</option>
+                    <option value="Arial, sans-serif">Arial</option>
                     <option value="'Calibri', sans-serif">Calibri</option>
-                    <option value="'Georgia', serif">Georgia</option>
+                    <option value="Georgia, serif">Georgia</option>
                   </select>
                 </div>
               </div>
               <div className="bg-slate-50 p-2 rounded border">
                 <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Pages</span>
-                <select value={pageSelection} onChange={e=>setPageSelection(e.target.value)} className="w-full text-xs p-1 border rounded"><option value="1">1</option><option value="2">2</option><option value="custom">Custom</option></select>
+                <select value={pageSelection} onChange={e=>setPageSelection(e.target.value)} className="w-full text-xs p-1 border rounded outline-none bg-white"><option value="1">1</option><option value="2">2</option><option value="custom">Custom</option></select>
                 {pageSelection==='custom'&&<input type="number" value={customPageCount} onChange={e=>setCustomPageCount(Number(e.target.value))} className="w-full mt-1 text-xs border rounded p-1"/>}
               </div>
             </div>
@@ -534,7 +547,7 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
                       {showPhoto && <div style={{width:picSizeStr,height:picSizeStr,minWidth:picSizeStr}} className="mb-5">{photoUrl?<img src={photoUrl} className="w-full h-full rounded-full object-cover border-4 border-white"/>:<div className="w-full h-full rounded-full bg-white flex items-center justify-center border-4 border-gray-200"><User size={60} className="text-gray-400"/></div>}</div>}
                       <h1 style={{...sTitle, color: headHColor}} className="font-bold mb-4 leading-tight break-words">{personalInfo?.name}</h1>
                       <div className="space-y-2 mb-6" style={{color: headPColor}}>{personalInfo?.email&&<div className="flex gap-3"><Mail size={12} className="mt-0.5"/><span style={sSm} className="break-all">{personalInfo.email}</span></div>}{personalInfo?.phone&&<div className="flex gap-3"><Phone size={12} className="mt-0.5"/><span style={sSm}>{personalInfo.phone}</span></div>}{personalInfo?.location&&<div className="flex gap-3"><MapPin size={12} className="mt-0.5"/><span style={sSm}>{personalInfo.location}</span></div>}</div>
-                      {(links || []).some(l=>l.url)&&<div className="grid grid-cols-2 gap-2 mb-6" style={{color: headPColor}}>{links.map(l=>l.url&&<div key={l.id} className="flex gap-2"><Link2 size={12} className="mt-1"/><span style={sSm} className="break-all">{l.label||l.url}</span></div>)}</div>}
+                      {(links || []).some(l=>l.url)&&<div className="grid grid-cols-2 gap-2 mb-6" style={{color: headPColor}}>{(links || []).map(l=>l.url&&<div key={l.id} className="flex gap-2"><Link2 size={12} className="mt-1"/><span style={sSm} className="break-all">{l.label||l.url}</span></div>)}</div>}
                       {(sections || []).filter(s=>s.visible && s.column==='left').map(s=>renderPreviewSection(s.id, 'themed'))}
                     </div>
                     <div className="p-8 flex flex-col bg-white" style={{ width: `${100 - activeHeadSizeNum}%` }}>

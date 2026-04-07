@@ -576,6 +576,12 @@ function ResumeEditor({ template, userFullName, userEmail, onBack }) {
     } catch(e) { }
   };
 
+  const activeHeadSize =
+  headSizeSelection === 'custom'
+    ? customHeadSize
+    : headSizeSelection;
+
+const activeHeadSizeNum = Number(activeHeadSize);
   useEffect(() => {
     const check = () => {
       if (previewContainerRef.current && innerContentRef.current) {
@@ -688,7 +694,7 @@ function ResumeEditor({ template, userFullName, userEmail, onBack }) {
     setIsDownloading(false);
   };
 
-  const activeHeadSizeNum = Number(activeHeadSize);
+
   const sSm = { fontSize: `${Math.max(8, fontSizeNum - 2)}px` };
   const sBase = { fontSize: `${fontSizeNum}px` };
   const sLg = { fontSize: `${fontSizeNum + 2}px` };

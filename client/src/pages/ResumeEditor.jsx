@@ -581,7 +581,7 @@ function ResumeEditor({ template, userFullName, userEmail, onBack }) {
     ? customHeadSize
     : headSizeSelection;
 
-const activeHeadSizeNum = Number(activeHeadSize);
+
   useEffect(() => {
     const check = () => {
       if (previewContainerRef.current && innerContentRef.current) {
@@ -622,6 +622,7 @@ const activeHeadSizeNum = Number(activeHeadSize);
   const addCustomItem = (sid) => { setCustomSectionsData(p => ({ ...p, [sid]: { ...(p[sid] || {}), items: [...((p[sid] || {}).items || []), { id: Date.now(), title: '', subtitle: '', description: '' }] } })); };
   const removeCustomItem = (sid, iid) => { setCustomSectionsData(p => ({ ...p, [sid]: { ...(p[sid] || {}), items: ((p[sid] || {}).items || []).filter(i => i.id !== iid) } })); };
 
+  const activeHeadSizeNum = Number(activeHeadSize);
   const [draggedIdx, setDraggedIdx] = useState(null);
   const handleDragStart = (e, i) => { setDraggedIdx(i); e.dataTransfer.effectAllowed = 'move'; };
   const handleDrop = (e, i) => {

@@ -100,7 +100,7 @@ export default function HomePage({ userEmail, onLogout, onNavigate }) {
         <div className="flex items-center gap-1.5 sm:gap-2 text-blue-800 font-bold text-xl sm:text-2xl tracking-tight cursor-pointer" onClick={() => onNavigate('home')}>
           <FileText className="text-blue-500 w-6 h-6 sm:w-7 sm:h-7" /> 
           <span className="hidden xs:inline">ResumeMaker</span>
-          <span className="xs:hidden">RM</span> {/* Shortened logo for very small phones */}
+          <span className="xs:hidden">Resume Maker</span> {/* Shortened logo for very small phones */}
         </div>
         
         <div className="flex items-center gap-3 sm:gap-4">

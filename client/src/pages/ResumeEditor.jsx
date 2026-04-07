@@ -183,103 +183,53 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
   const toggleSectionColumn = (id, col) => { setSections(p => p.map(s => s.id === id ? { ...s, column: col } : s)); };
   const toggleSectionTimeline = (id) => { setSections(p => p.map(s => s.id === id ? { ...s, timeline: !s.timeline } : s)); };
 
-// --- PDF GENERATION (FIXED ALIGNMENT & WHITE LINE) ---
-  const processPDF = () => {
-    return new Promise((resolve, reject) => {
-      const element = document.getElementById('resume-preview-content');
-      if (!element) return reject("Preview element not found");
+// --- PDF GENERATION ---
+  const processPDF = () => {
+    return new Promise((resolve, reject) => {
+      const element = document.getElementById('resume-preview-content');
+      const clone = element.cloneNode(true);
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = `position:absolute;top:0;left:0;width:816px;height:${pageCount * 1056}px;z-index:-9999;background:white;`;
+      clone.style.width = '100%'; clone.style.height = '100%'; clone.style.margin = '0';
+      wrapper.appendChild(clone); document.body.appendChild(wrapper);
+      const base = personalInfo.name ? personalInfo.name.trim().replace(/\s+/g, '_') : 'User';
+      const opt = { margin: 0, filename: `${base}_Resume.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true, logging: false, width: 816, height: pageCount * 1056 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+      window.html2pdf().set(opt).from(wrapper).save().then(() => { document.body.removeChild(wrapper); resolve(); }).catch(e => { document.body.removeChild(wrapper); reject(e); });
+    });
+  };
 
-      // 1. Create a clean clone to strip any CSS artifacts like shadows or borders
-      const clone = element.cloneNode(true);
-      
-      // 2. HARD-RESET styles on the clone to prevent the "white line" artifact
-      clone.style.margin = '0px';
-      clone.style.padding = '0px';
-      clone.style.boxShadow = 'none';
-      clone.style.border = 'none';
-      clone.style.outline = 'none';
-      clone.style.borderRadius = '0px';
-      clone.style.transform = 'none';
-      clone.style.width = '816px'; // Exact 8.5 inches at 96 DPI
-      clone.style.height = `${pageCount * 1056}px`;
+  const generateExactPDF = async () => {
+    setIsDownloading(true);
+    if (!window.html2pdf) {
+      const script = document.createElement('script'); script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      await new Promise(r => { script.onload = r; document.body.appendChild(script); });
+    }
+    await processPDF();
+    setIsDownloading(false);
+  };// --- PDF GENERATION ---
+  const processPDF = () => {
+    return new Promise((resolve, reject) => {
+      const element = document.getElementById('resume-preview-content');
+      const clone = element.cloneNode(true);
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = `position:absolute;top:0;left:0;width:816px;height:${pageCount * 1056}px;z-index:-9999;background:white;`;
+      clone.style.width = '100%'; clone.style.height = '100%'; clone.style.margin = '0';
+      wrapper.appendChild(clone); document.body.appendChild(wrapper);
+      const base = personalInfo.name ? personalInfo.name.trim().replace(/\s+/g, '_') : 'User';
+      const opt = { margin: 0, filename: `${base}_Resume.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true, logging: false, width: 816, height: pageCount * 1056 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+      window.html2pdf().set(opt).from(wrapper).save().then(() => { document.body.removeChild(wrapper); resolve(); }).catch(e => { document.body.removeChild(wrapper); reject(e); });
+    });
+  };
 
-      // 3. Create an invisible absolute wrapper
-      const wrapper = document.createElement('div');
-      wrapper.style.cssText = `
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 816px;
-        height: ${pageCount * 1056}px;
-        z-index: -9999;
-        background: white;
-        margin: 0;
-        padding: 0;
-        border: none;
-        overflow: hidden;
-      `;
-      
-      wrapper.appendChild(clone);
-      document.body.appendChild(wrapper);
-
-      const base = personalInfo.name ? personalInfo.name.trim().replace(/\s+/g, '_') : 'User';
-
-      const opt = {
-        margin: 0,
-        filename: `${base}_Resume.pdf`,
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: {
-          scale: 2,           // High resolution
-          useCORS: true,      // Allows photo loading
-          logging: false,
-          width: 816,         // Lock width
-          windowWidth: 816,   // Lock viewport
-          x: 0,               // CRUCIAL: Forces capture from the far left
-          y: 0,               // CRUCIAL: Forces capture from the absolute top
-          scrollX: 0,
-          scrollY: 0
-        },
-        jsPDF: { 
-          unit: 'px', 
-          format: [816, pageCount * 1056], // Match canvas pixels exactly
-          orientation: 'portrait' 
-        }
-      };
-
-      window.html2pdf()
-        .set(opt)
-        .from(wrapper)
-        .save()
-        .then(() => {
-          document.body.removeChild(wrapper);
-          resolve();
-        })
-        .catch(err => {
-          document.body.removeChild(wrapper);
-          reject(err);
-        });
-    });
-  };
-
-  const generateExactPDF = async () => {
-    setIsDownloading(true);
-    try {
-      if (!window.html2pdf) {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-        await new Promise(r => {
-          script.onload = r;
-          document.body.appendChild(script);
-        });
-      }
-      await processPDF();
-    } catch (error) {
-      console.error("PDF Generation failed:", error);
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
+  const generateExactPDF = async () => {
+    setIsDownloading(true);
+    if (!window.html2pdf) {
+      const script = document.createElement('script'); script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      await new Promise(r => { script.onload = r; document.body.appendChild(script); });
+    }
+    await processPDF();
+    setIsDownloading(false);
+  };
   // --- PREVIEW STYLES ---
   const sSm = { fontSize: `${Math.max(8, fontSizeNum - 2)}px` };
   const sBase = { fontSize: `${fontSizeNum}px` };

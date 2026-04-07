@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Mail, Phone, MapPin, Link2, Plus, Trash2, FileText, ArrowLeft, Image as ImageIcon, Download, GripVertical, Eye, EyeOff, AlertTriangle, Undo2, Redo2, X } from 'lucide-react';
 
-// --- EXACT SHARED DEFAULTS ---
+// --- EXACT DEFAULTS ---
 const DEFAULT_SHARED_CONTENT = {
   personalInfo: { name: 'Rahul Sharma', email: 'rahul.sharma@example.com', phone: '+91 98765 43210', location: 'Bangalore, India' },
   links: [{ id: 1, label: 'LinkedIn', url: 'linkedin.com/in/rahulsharma' }],
@@ -28,7 +28,7 @@ const DEFAULT_SHARED_CONTENT = {
   customSectionsData: { 'custom-default': { title: 'Languages / Interests', items: [{ id: 1, title: '', subtitle: '', description: '' }] } }
 };
 
-// --- ISOLATED 1-COLUMN SETTINGS ---
+// 1-COLUMN ISOLATED DEFAULTS (Font 9, Dark Text, Head 0)
 const DEFAULT_SETTINGS_1_COL = {
   themeColor: '#31414e', themeTextColor: 'black', fontSizeNum: 9, fontFamily: "'Times New Roman', serif", headSizeSelection: '0', customHeadSize: 0, headerAlignment: 'left', photoAlignment: 'left', pageSelection: '1', customPageCount: 5,
   sections: [
@@ -43,7 +43,7 @@ const DEFAULT_SETTINGS_1_COL = {
   ]
 };
 
-// --- ISOLATED 2-COLUMN SETTINGS ---
+// 2-COLUMN ISOLATED DEFAULTS (Font 12, Light Text, Head 32)
 const DEFAULT_SETTINGS_2_COL = {
   themeColor: '#31414e', themeTextColor: 'white', fontSizeNum: 12, fontFamily: "'Times New Roman', serif", headSizeSelection: '32', customHeadSize: 32, headerAlignment: 'left', photoAlignment: 'left', pageSelection: '1', customPageCount: 5,
   sections: [
@@ -58,73 +58,62 @@ const DEFAULT_SETTINGS_2_COL = {
   ]
 };
 
-// --- CRASH-PROOF PARSERS ---
-const getSharedData = () => {
+// --- CRASH-PROOF SAFE PARSER ---
+const safeParse = (key, defaultObj) => {
   try {
-    const raw = localStorage.getItem('ResumeMaker_Shared_Content');
-    if (!raw) return DEFAULT_SHARED_CONTENT;
-    const parsed = JSON.parse(raw);
-    return { ...DEFAULT_SHARED_CONTENT, ...parsed, personalInfo: { ...DEFAULT_SHARED_CONTENT.personalInfo, ...(parsed?.personalInfo || {}) } };
+    const data = localStorage.getItem(key);
+    if (!data) return defaultObj;
+    const parsed = JSON.parse(data);
+    if (typeof parsed !== 'object' || parsed === null) return defaultObj;
+    return parsed;
   } catch (e) {
-    return DEFAULT_SHARED_CONTENT;
-  }
-};
-
-const getSettingsData = (templateType) => {
-  const defaults = templateType === '1-column' ? DEFAULT_SETTINGS_1_COL : DEFAULT_SETTINGS_2_COL;
-  try {
-    const raw = localStorage.getItem(`ResumeMaker_Settings_${templateType}`);
-    if (!raw) return defaults;
-    const parsed = JSON.parse(raw);
-    return { ...defaults, ...parsed };
-  } catch (e) {
-    return defaults;
+    return defaultObj;
   }
 };
 
 export default function ResumeEditor({ template, userFullName, userEmail, onBack }) {
-  // LOAD DATA
-  const initShared = getSharedData();
-  const initSettings = getSettingsData(template);
+  // --- LOAD DATA SAFELY ---
+  const initShared = safeParse('ResumeMaker_Shared_Content', DEFAULT_SHARED_CONTENT);
+  const initSettings = safeParse(`ResumeMaker_Settings_${template}`, template === '1-column' ? DEFAULT_SETTINGS_1_COL : DEFAULT_SETTINGS_2_COL);
 
-  // --- ISOLATED SETTINGS (Template Specific) ---
-  const [pageSelection, setPageSelection] = useState(() => initSettings.pageSelection); 
-  const [customPageCount, setCustomPageCount] = useState(() => initSettings.customPageCount);
-  const pageCount = pageSelection === 'custom' ? customPageCount : parseInt(pageSelection) || 1;
+  // --- ISOLATED SETTINGS (Saved per template) ---
+  const [pageSelection, setPageSelection] = useState(() => initSettings.pageSelection || '1'); 
+  const [customPageCount, setCustomPageCount] = useState(() => initSettings.customPageCount || 5);
+  const pageCount = pageSelection === 'custom' ? customPageCount : parseInt(pageSelection);
 
-  const [fontSizeNum, setFontSizeNum] = useState(() => initSettings.fontSizeNum); 
-  const [fontFamily, setFontFamily] = useState(() => initSettings.fontFamily);
-  const [themeColor, setThemeColor] = useState(() => initSettings.themeColor); 
-  const [themeTextColor, setThemeTextColor] = useState(() => initSettings.themeTextColor); 
+  const [fontSizeNum, setFontSizeNum] = useState(() => initSettings.fontSizeNum || (template === '1-column' ? 9 : 12)); 
+  const [fontFamily, setFontFamily] = useState(() => initSettings.fontFamily || "'Times New Roman', serif");
+  const [themeColor, setThemeColor] = useState(() => initSettings.themeColor || '#31414e'); 
+  const [themeTextColor, setThemeTextColor] = useState(() => initSettings.themeTextColor || (template === '1-column' ? 'black' : 'white')); 
   
-  const [headSizeSelection, setHeadSizeSelection] = useState(() => initSettings.headSizeSelection); 
-  const [customHeadSize, setCustomHeadSize] = useState(() => initSettings.customHeadSize);
-  const [headerAlignment, setHeaderAlignment] = useState(() => initSettings.headerAlignment);
-  const [photoAlignment, setPhotoAlignment] = useState(() => initSettings.photoAlignment);
-  const [sections, setSections] = useState(() => initSettings.sections);
+  const [headSizeSelection, setHeadSizeSelection] = useState(() => initSettings.headSizeSelection || (template === '1-column' ? '0' : '32')); 
+  const [customHeadSize, setCustomHeadSize] = useState(() => initSettings.customHeadSize || 32);
+  const [headerAlignment, setHeaderAlignment] = useState(() => initSettings.headerAlignment || 'left');
+  const [photoAlignment, setPhotoAlignment] = useState(() => initSettings.photoAlignment || 'left');
+  const [sections, setSections] = useState(() => initSettings.sections || (template === '1-column' ? DEFAULT_SETTINGS_1_COL.sections : DEFAULT_SETTINGS_2_COL.sections));
 
-  // --- SHARED DATA (Transfers Seamlessly) ---
+  // --- SHARED DATA (Transfers across templates seamlessly) ---
   const [personalInfo, setPersonalInfo] = useState(() => {
-    const info = { ...initShared.personalInfo };
+    const info = { ...DEFAULT_SHARED_CONTENT.personalInfo, ...(initShared.personalInfo || {}) };
     if (userFullName && info.name === 'Rahul Sharma') info.name = userFullName;
     if (userEmail && info.email === 'rahul.sharma@example.com') info.email = userEmail;
     return info;
   });
 
-  const [links, setLinks] = useState(() => initShared.links || []);
+  const [links, setLinks] = useState(() => initShared.links || DEFAULT_SHARED_CONTENT.links);
   const [showPhoto, setShowPhoto] = useState(() => initShared.showPhoto ?? false);
   const [photoUrl, setPhotoUrl] = useState(() => initShared.photoUrl || '');
   const [photoFileName, setPhotoFileName] = useState(() => initShared.photoFileName || '');
-  const [summaryContent, setSummaryContent] = useState(() => initShared.summaryContent || '');
-  const [education, setEducation] = useState(() => initShared.education || []);
-  const [experience, setExperience] = useState(() => initShared.experience || []);
-  const [projects, setProjects] = useState(() => initShared.projects || []);
+  const [summaryContent, setSummaryContent] = useState(() => initShared.summaryContent || DEFAULT_SHARED_CONTENT.summaryContent);
+  const [education, setEducation] = useState(() => initShared.education || DEFAULT_SHARED_CONTENT.education);
+  const [experience, setExperience] = useState(() => initShared.experience || DEFAULT_SHARED_CONTENT.experience);
+  const [projects, setProjects] = useState(() => initShared.projects || DEFAULT_SHARED_CONTENT.projects);
   const [skillsFormat, setSkillsFormat] = useState(() => initShared.skillsFormat || 'categorized');
-  const [skillsContent, setSkillsContent] = useState(() => initShared.skillsContent || '');
-  const [skillsData, setSkillsData] = useState(() => initShared.skillsData || []);
-  const [certifications, setCertifications] = useState(() => initShared.certifications || []);
-  const [achievements, setAchievements] = useState(() => initShared.achievements || []);
-  const [customSectionsData, setCustomSectionsData] = useState(() => initShared.customSectionsData || {});
+  const [skillsContent, setSkillsContent] = useState(() => initShared.skillsContent || DEFAULT_SHARED_CONTENT.skillsContent);
+  const [skillsData, setSkillsData] = useState(() => initShared.skillsData || DEFAULT_SHARED_CONTENT.skillsData);
+  const [certifications, setCertifications] = useState(() => initShared.certifications || DEFAULT_SHARED_CONTENT.certifications);
+  const [achievements, setAchievements] = useState(() => initShared.achievements || DEFAULT_SHARED_CONTENT.achievements);
+  const [customSectionsData, setCustomSectionsData] = useState(() => initShared.customSectionsData || DEFAULT_SHARED_CONTENT.customSectionsData);
 
   // App State
   const [activeSection, setActiveSection] = useState('basic-info');
@@ -195,7 +184,7 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
       setCustomHeadSize(s.settings.customHeadSize || 0);
       setHeaderAlignment(s.settings.headerAlignment || 'left'); 
       setPhotoAlignment(s.settings.photoAlignment || 'left');
-    } catch(e) {}
+    } catch(e) { console.error("Error restoring state"); }
   };
 
   // --- OVERFLOW DETECTION ---
@@ -252,20 +241,20 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
   const toggleSectionColumn = (id, col) => { setSections(p => (p || []).map(s => s.id === id ? { ...s, column: col } : s)); };
   const toggleSectionTimeline = (id) => { setSections(p => (p || []).map(s => s.id === id ? { ...s, timeline: !s.timeline } : s)); };
 
-  // --- WHITE-LINE FIX: PERFECT PDF GENERATION ---
+  // --- WHITE-LINE FIX: PIXEL-PERFECT PDF GENERATION ---
   const processPDF = () => {
     return new Promise((resolve, reject) => {
       const element = document.getElementById('resume-preview-content');
       const clone = element.cloneNode(true);
       
-      // Force remove any styling that causes artifacts (shadows, borders, scaling margins)
+      // Strip everything that causes white lines or rendering artifacts
       clone.style.margin = '0px';
       clone.style.padding = '0px';
       clone.style.boxShadow = 'none';
       clone.style.border = 'none';
       clone.style.outline = 'none';
       clone.style.borderRadius = '0px';
-      clone.style.transform = 'none'; // Prevent inherited scaling
+      clone.style.transform = 'none';
       clone.style.width = '816px';
       clone.style.height = `${pageCount * 1056}px`;
 
@@ -276,7 +265,7 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
 
       const base = personalInfo?.name ? personalInfo.name.trim().replace(/\s+/g, '_') : 'Resume';
       
-      // Explicit X and Y coordinates fixed to 0 guarantees exact edge alignment
+      // Exact pixel formatting + forced zero coordinates to fix left-alignment gap
       const opt = { 
         margin: 0, 
         filename: `${base}.pdf`, 
@@ -288,7 +277,7 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
           width: 816, 
           height: pageCount * 1056,
           windowWidth: 816,
-          x: 0, 
+          x: 0, // Forces absolute left alignment to remove white line
           y: 0, 
           scrollX: 0, 
           scrollY: 0 
@@ -384,7 +373,7 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
       case 'education': return (education || []).length > 0 && <section key="edu" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className={`font-bold ${titleMb} uppercase border-b pb-1`}>Education</h2><div className="space-y-0">{(education || []).map(e => renderTimelineItem(<div className="block"><div className="flex justify-between items-baseline"><h3 style={{...sLg, color: hColor}} className="font-bold">{e.school}</h3>{template==='1-column'&&<span style={{...sSm, color: mColor}} className="font-bold whitespace-nowrap ml-auto">{e.from} - {e.to}</span>}</div><div style={{...sSm, color: pColor}} className="uppercase">{e.degree} {template==='2-column'&&<span className="font-bold">| {e.from} - {e.to}</span>}</div>{e.cgpa && <div style={{...sSm, color: pColor}}>Current CGPA: {e.cgpa}</div>}</div>, e.id, section.timeline, mode))}</div></section>;
       case 'experience': return (experience || []).length > 0 && <section key="exp" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className={`font-bold ${titleMb} uppercase border-b pb-1`}>Experience</h2><div className="space-y-0">{(experience || []).map(e => renderTimelineItem(<div className="block"><div className="flex justify-between items-baseline"><h3 style={{...sLg, color: hColor}} className="font-bold">{e.role}</h3>{template==='1-column'&&<span style={{...sSm, color: mColor}} className="font-bold whitespace-nowrap ml-auto">{e.from} - {e.to}</span>}</div><div style={{...sSm, color: pColor}} className="uppercase">{e.company} {template==='2-column'&&<span className="font-bold">| {e.from} - {e.to}</span>}</div>{renderDescription(e.description, e.isBullet, pColor, sBase)}</div>, e.id, section.timeline, mode))}</div></section>;
       case 'projects': return (projects || []).length > 0 && <section key="proj" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className={`font-bold ${titleMb} uppercase border-b pb-1`}>Projects</h2><div className="space-y-0">{(projects || []).map(e => renderTimelineItem(<div className="block"><h3 style={{...sLg, color: hColor}} className="font-bold">{e.title}</h3><div style={{...sSm, color: mColor}} className="italic">{e.tech}</div>{renderDescription(e.description, e.isBullet, pColor, sBase)}</div>, e.id, section.timeline, mode))}</div></section>;
-      case 'skills': return (skillsFormat === 'categorized' ? (skillsData || []).length > 0 : skillsContent) && <div key="skills" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className={`font-bold ${titleMb} uppercase border-b pb-1`}>Skills</h2>{renderTimelineItem(skillsFormat === 'categorized' ? <div className="space-y-1">{(skillsData || []).map(i => i.category && i.skills && <div key={`sk-${i.id}`} style={{...sBase, color: pColor}}><span style={{color: hColor}} className="mr-1 font-bold">{i.category}:</span>{(i.skills || '').split('|').map(s=>s.trim()).join(' | ')}</div>)}</div> : <div style={{...sBase, color: pColor}}>{(skillsContent || '').split(',').join(' | ')}</div>, 'sk', section.timeline, mode)}</div>;
+      case 'skills': return (skillsFormat === 'categorized' ? (skillsData || []).length > 0 : skillsContent) && <div key="skills" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className={`font-bold ${titleMb} uppercase border-b pb-1`}>Skills</h2>{renderTimelineItem(skillsFormat === 'categorized' ? <div className="space-y-1">{(skillsData || []).map(i => i.category && i.skills && <div key={`sk-${i.id}`} style={{...sBase, color: pColor}}><span style={{color: hColor}} className="mr-1 font-bold">{i.category}:</span>{(i.skills || '').split('|').join(' | ')}</div>)}</div> : <div style={{...sBase, color: pColor}}>{(skillsContent || '').split(',').join(' | ')}</div>, 'sk', section.timeline, mode)}</div>;
       case 'certifications': return (certifications || []).length > 0 && <div key="cert" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className="font-bold uppercase border-b pb-1">Certifications</h2><div className="space-y-0">{(certifications || []).map(c => c.text && renderTimelineItem(<div style={{...sBase, color: pColor}}>{!section.timeline && <span style={{color: hColor}} className="mr-2">•</span>}{c.text}</div>, c.id, section.timeline, mode, 'mb-1', 'pb-2'))}</div></div>;
       case 'achievements': return (achievements || []).length > 0 && <div key="ach" className={sectionMb} style={style}><h2 style={{...sXl, color: hColor, borderBottomColor: borderColor}} className="font-bold uppercase border-b pb-1">Achievements</h2><div className="space-y-0">{(achievements || []).map(c => c.text && renderTimelineItem(<div style={{...sBase, color: pColor}}>{!section.timeline && <span style={{color: hColor}} className="mr-2">•</span>}{c.text}</div>, c.id, section.timeline, mode, 'mb-1', 'pb-2'))}</div></div>;
       default: return null;
@@ -530,7 +519,7 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
           </div>
 
           <div className="w-full overflow-x-auto text-center pb-12">
-            {/* NO BORDERS, MARGINS, OR PADDING ON THE RENDER TARGET */}
+            {/* NO BORDERS, MARGINS, OR PADDING ON THE RENDER TARGET TO PREVENT WHITE LINES IN PDF */}
             <div ref={previewContainerRef} className="inline-block text-left shadow-2xl bg-white" style={{ width: '816px', height: `${pageCount * 1056}px` }}>
               <div id="resume-preview-content" ref={innerContentRef} className="w-full h-full flex flex-col bg-white overflow-hidden" style={{ fontFamily, color: '#0f172a' }}>
                 {template === '1-column' ? (

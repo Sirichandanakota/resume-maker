@@ -12,7 +12,7 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
   const handleSubmit = async (e) => {
     e.preventDefault(); 
     setLoading(true);
-    // We do NOT reset error here immediately, so the old message persists during the attempt.
+    // Error stays visible while loading...
 
     try {
       if (!name || !email || !password) {
@@ -25,12 +25,12 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
       
       if (response?.data?.token) {
         localStorage.setItem('token', response.data.token);
-        setError(''); // SUCCESS: Clear error
+        setError(''); // SUCCESS: Clear error before moving
         onLogin(email, response.data.name || name);
       }
     } catch (err) {
       console.error("Login attempt failed:", err);
-      // ERROR STICKY: It updates state and stays here because no navigation happens.
+      // FAILURE: Error stays strictly here until next attempt or refresh
       setError(err.response?.data?.error || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
@@ -43,11 +43,12 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
         <ArrowLeft size={18} /> <span>Back to Home</span>
       </button>
 
-      <div className="hidden lg:flex w-1/2 bg-blue-600 items-center justify-center relative">
+      <div className="hidden lg:flex w-1/2 bg-blue-600 items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
         <div className="z-10 text-white text-center px-12">
           <FileText size={80} className="mx-auto mb-6 text-blue-200" />
           <h2 className="text-4xl font-extrabold mb-4">ResumeMaker</h2>
-          <p className="text-blue-100 text-lg">Sign in to manage your career.</p>
+          <p className="text-blue-100 text-lg leading-relaxed">Sign in to manage your professional identity.</p>
         </div>
       </div>
 
@@ -60,7 +61,7 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">Welcome Back</h1>
           </div>
 
-          {/* THE ERROR: Designed to stay until a successful submit */}
+          {/* THE ERROR: designed to stay strictly on the page */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg flex items-center gap-3">
               <AlertCircle className="text-red-500 shrink-0" size={20} />
@@ -70,15 +71,15 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1 uppercase">Full Name</label>
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1 uppercase tracking-wide">Full Name</label>
               <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:border-blue-500 transition-all font-medium bg-slate-50" placeholder="Full Name" />
             </div>
             <div>
-              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1 uppercase">Email</label>
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1 uppercase tracking-wide">Email</label>
               <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:border-blue-500 transition-all font-medium bg-slate-50" placeholder="email@example.com" />
             </div>
             <div>
-              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1 uppercase">Password</label>
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1 uppercase tracking-wide">Password</label>
               <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:border-blue-500 transition-all font-medium bg-slate-50" placeholder="••••••••" />
             </div>
             

@@ -33,6 +33,8 @@ export default function App() {
     localStorage.setItem('RM_user_fullname', userFullName);
     if (template) {
       localStorage.setItem('RM_selected_template', template);
+    } else {
+      localStorage.removeItem('RM_selected_template');
     }
   }, [currentPage, userEmail, userFullName, template]);
 
@@ -94,7 +96,10 @@ export default function App() {
               <TemplatesPage 
                 userEmail={userEmail}
                 userName={userFullName ? userFullName.split(' ')[0] : 'User'}
-                onSelect={(tmpl) => { setTemplate(tmpl); setCurrentPage('editor'); }}
+                onSelect={(tmpl) => { 
+                  setTemplate(tmpl); 
+                  setCurrentPage('editor'); 
+                }}
                 onLogout={handleLogout}
                 onBack={() => setCurrentPage('home')}
               />
@@ -103,6 +108,11 @@ export default function App() {
           </div>
         );
       case 'editor':
+        // Safety: If no template is selected but user is on editor page, send back to templates
+        if (!template) {
+          setCurrentPage('templates');
+          return null;
+        }
         return (
           <ResumeEditor 
             key={template}

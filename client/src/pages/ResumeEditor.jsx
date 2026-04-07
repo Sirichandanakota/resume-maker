@@ -303,7 +303,10 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
   };
 
   // --- PREVIEW STYLES ---
-  const activeHeadSizeNum = Number(activeHeadSize);
+  const activeHeadSize =
+  headSizeSelection === 'custom' ? customHeadSize : headSizeSelection;
+
+const activeHeadSizeNum = Number(activeHeadSize);
   const sSm = { fontSize: `${Math.max(8, fontSizeNum - 2)}px` };
   const sBase = { fontSize: `${fontSizeNum}px` };
   const sLg = { fontSize: `${fontSizeNum + 2}px` };

@@ -84,7 +84,9 @@ const Mockup2Column = () => (
 
 // --- HOME PAGE MAIN COMPONENT ---
 export default function HomePage({ userEmail, onLogout, onNavigate }) {
-  const handleCreateCV = () => {
+  
+  // LOGIC: If logged in, go to templates; otherwise, go to login.
+  const handleAction = () => {
     if (userEmail) {
       onNavigate('templates');
     } else {
@@ -96,7 +98,7 @@ export default function HomePage({ userEmail, onLogout, onNavigate }) {
     // STOPS SCROLLING: Exactly 100vh viewport height, overflow completely hidden
     <div className="h-[100dvh] w-full bg-white font-sans flex flex-col overflow-hidden">
       
-      {/* HEADER: Shrinks to exactly the height it needs */}
+      {/* HEADER */}
       <header className="flex-none flex justify-between items-center px-4 py-3 md:px-6 md:py-4 bg-white border-b border-gray-100 z-20">
         <div className="flex items-center gap-1.5 md:gap-2 text-blue-800 font-bold text-xl md:text-2xl tracking-tight cursor-pointer" onClick={() => onNavigate('home')}>
           <FileText className="text-blue-500 w-6 h-6 md:w-7 md:h-7" /> 
@@ -125,7 +127,7 @@ export default function HomePage({ userEmail, onLogout, onNavigate }) {
         </div>
       </header>
       
-      {/* MAIN CONTENT: Fills exact remaining space. Side-by-side perfectly triggers at md: for desktop site views */}
+      {/* MAIN CONTENT: Side-by-side perfectly triggers at md: for desktop site views */}
       <main className="flex-1 flex flex-col md:flex-row items-center justify-between max-w-7xl mx-auto w-full px-5 md:px-8 py-6 md:py-0 min-h-0">
         
         {/* LEFT TEXT SECTION */}
@@ -138,19 +140,18 @@ export default function HomePage({ userEmail, onLogout, onNavigate }) {
             Create a professional resume in minutes. Stand out to recruiters and land your dream job with ease.
           </p>
           
-          {/* DESKTOP BUTTON - Only shows on laptop/desktop view */}
+          {/* DESKTOP BUTTON - Changes text based on userEmail */}
           <div className="hidden md:block mt-8">
             <button 
-              onClick={handleCreateCV} 
+              onClick={handleAction} 
               className="bg-yellow-400 text-yellow-900 font-extrabold px-10 py-4 rounded-full hover:bg-yellow-500 shadow-lg text-lg transition-transform hover:scale-105 active:scale-95 text-center"
             >
-              Create new CV
+              {userEmail ? "Continue Editing" : "Create new CV"}
             </button>
           </div>
         </div>
         
         {/* RIGHT IMAGES & MOBILE BUTTON SECTION */}
-        {/* flex-1 min-h-0 forces this box to shrink instead of causing a scrollbar */}
         <div className="flex-1 md:flex-1 w-full md:w-1/2 flex flex-col items-center justify-end md:justify-center min-h-0">
           
           {/* MOCKUP IMAGES CONTAINER */}
@@ -163,13 +164,13 @@ export default function HomePage({ userEmail, onLogout, onNavigate }) {
             </div>
           </div>
 
-          {/* MOBILE BUTTON - Tight spacing directly below images, perfectly centered */}
+          {/* MOBILE BUTTON - Changes text based on userEmail */}
           <div className="flex-none md:hidden w-full max-w-[300px] mt-4 mb-2">
             <button 
-              onClick={handleCreateCV} 
+              onClick={handleAction} 
               className="w-full bg-yellow-400 text-yellow-900 font-extrabold px-8 py-3.5 rounded-full hover:bg-yellow-500 shadow-lg text-base transition-transform active:scale-95 text-center"
             >
-              Create new CV
+              {userEmail ? "Continue Editing" : "Create new CV"}
             </button>
           </div>
 

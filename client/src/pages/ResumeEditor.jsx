@@ -56,7 +56,7 @@ const DEFAULT_SETTINGS_2_COL = {
 };
 
 export default function ResumeEditor({ template, userFullName, userEmail, onBack }) {
-  // --- LOAD PERSISTENT DATA ---
+  // --- LOAD PERSISTENT DATA CAREFULLY ---
   const getSharedContent = () => {
     try { const d = localStorage.getItem('ResumeMaker_Shared_Content'); return d ? JSON.parse(d) : DEFAULT_SHARED_CONTENT; } catch(e) { return DEFAULT_SHARED_CONTENT; }
   };
@@ -84,27 +84,26 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
 
   // --- SHARED DATA (Transfers across templates) ---
   const [personalInfo, setPersonalInfo] = useState(() => {
-    // If logged in user details exist and haven't been modified heavily, apply them over defaults
-    const info = initShared.personalInfo;
+    const info = initShared.personalInfo || DEFAULT_SHARED_CONTENT.personalInfo;
     if (userFullName && info.name === 'Rahul Sharma') info.name = userFullName;
     if (userEmail && info.email === 'rahul.sharma@example.com') info.email = userEmail;
     return info;
   });
 
-  const [links, setLinks] = useState(initShared.links);
-  const [showPhoto, setShowPhoto] = useState(initShared.showPhoto);
-  const [photoUrl, setPhotoUrl] = useState(initShared.photoUrl);
-  const [photoFileName, setPhotoFileName] = useState(initShared.photoFileName);
-  const [summaryContent, setSummaryContent] = useState(initShared.summaryContent);
-  const [education, setEducation] = useState(initShared.education);
-  const [experience, setExperience] = useState(initShared.experience);
-  const [projects, setProjects] = useState(initShared.projects);
-  const [skillsFormat, setSkillsFormat] = useState(initShared.skillsFormat);
-  const [skillsContent, setSkillsContent] = useState(initShared.skillsContent);
-  const [skillsData, setSkillsData] = useState(initShared.skillsData);
-  const [certifications, setCertifications] = useState(initShared.certifications);
-  const [achievements, setAchievements] = useState(initShared.achievements);
-  const [customSectionsData, setCustomSectionsData] = useState(initShared.customSectionsData);
+  const [links, setLinks] = useState(initShared.links || DEFAULT_SHARED_CONTENT.links);
+  const [showPhoto, setShowPhoto] = useState(initShared.showPhoto ?? true);
+  const [photoUrl, setPhotoUrl] = useState(initShared.photoUrl || '');
+  const [photoFileName, setPhotoFileName] = useState(initShared.photoFileName || '');
+  const [summaryContent, setSummaryContent] = useState(initShared.summaryContent || DEFAULT_SHARED_CONTENT.summaryContent);
+  const [education, setEducation] = useState(initShared.education || DEFAULT_SHARED_CONTENT.education);
+  const [experience, setExperience] = useState(initShared.experience || DEFAULT_SHARED_CONTENT.experience);
+  const [projects, setProjects] = useState(initShared.projects || DEFAULT_SHARED_CONTENT.projects);
+  const [skillsFormat, setSkillsFormat] = useState(initShared.skillsFormat || 'categorized');
+  const [skillsContent, setSkillsContent] = useState(initShared.skillsContent || DEFAULT_SHARED_CONTENT.skillsContent);
+  const [skillsData, setSkillsData] = useState(initShared.skillsData || DEFAULT_SHARED_CONTENT.skillsData);
+  const [certifications, setCertifications] = useState(initShared.certifications || DEFAULT_SHARED_CONTENT.certifications);
+  const [achievements, setAchievements] = useState(initShared.achievements || DEFAULT_SHARED_CONTENT.achievements);
+  const [customSectionsData, setCustomSectionsData] = useState(initShared.customSectionsData || DEFAULT_SHARED_CONTENT.customSectionsData);
 
   // App State
   const [activeSection, setActiveSection] = useState('basic-info');
@@ -227,11 +226,11 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
       wrapper.appendChild(clone); 
       document.body.appendChild(wrapper);
 
-      const base = personalInfo.name ? personalInfo.name.trim().replace(/\s+/g, '_') : 'User';
+      const base = personalInfo.name ? personalInfo.name.trim().replace(/\s+/g, '_') : 'Resume';
       
       const opt = { 
         margin: 0, 
-        filename: `${base}_Resume.pdf`, 
+        filename: `${base}.pdf`, 
         image: { type: 'jpeg', quality: 1 }, 
         html2canvas: { 
           scale: 2, 
@@ -339,6 +338,7 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
 
   return (
     <div className="flex flex-col lg:flex-row h-screen bg-gray-100 overflow-hidden font-sans">
+      {/* LEFT EDITOR PANEL */}
       <div className="w-full lg:w-[45%] h-full overflow-y-auto bg-slate-50 border-r border-gray-200 shadow-lg z-10 p-6">
         <div className="flex items-center justify-between mb-6">
           <button onClick={onBack} className="flex items-center gap-1 text-blue-600 font-bold hover:text-blue-800"><ArrowLeft size={18}/> Back</button>
@@ -346,77 +346,113 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
         </div>
 
         <section className={`bg-white p-5 rounded-lg border mb-6 ${activeSection === 'basic-info' ? 'border-slate-800 ring-1' : 'border-gray-200'}`} onClickCapture={()=>setActiveSection('basic-info')}>
-          <h2 className="font-bold border-b pb-2 mb-4">Basic Info</h2>
+          <h2 className="font-bold border-b pb-2 mb-4 text-lg">Basic Info</h2>
+          <div className="bg-slate-50 p-4 border rounded-lg mb-4">
+            <label className="flex items-center gap-2 font-medium cursor-pointer"><input type="checkbox" checked={showPhoto} onChange={e=>setShowPhoto(e.target.checked)} className="w-4 h-4"/> Include Photo</label>
+            {showPhoto && <div className="mt-3 pl-4 border-l-2 border-slate-200"><input type="file" accept="image/*" onChange={handlePhotoUpload} className="w-full text-xs text-slate-500 file:bg-blue-50 file:text-blue-700 file:rounded file:px-3 file:py-1 file:border-0"/>{template==='1-column'&&<div className="mt-2 flex items-center gap-2"><span className="text-xs text-gray-500">Align:</span><select value={photoAlignment} onChange={e=>setPhotoAlignment(e.target.value)} className="p-1 text-xs border rounded"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></div>}</div>}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input name="name" value={personalInfo.name} onChange={handlePersonalInfoChange} className="md:col-span-2 p-2 border rounded" placeholder="Full Name"/>
-            <input name="email" value={personalInfo.email} onChange={handlePersonalInfoChange} className="p-2 border rounded" placeholder="Email"/>
-            <input name="phone" value={personalInfo.phone} onChange={handlePersonalInfoChange} className="p-2 border rounded" placeholder="Phone"/>
-            <input name="location" value={personalInfo.location} onChange={handlePersonalInfoChange} className="md:col-span-2 p-2 border rounded" placeholder="Location"/>
+            <div className="md:col-span-2 flex justify-between"><label className="text-sm font-medium text-gray-600">Name</label>{template==='1-column'&&<select value={headerAlignment} onChange={e=>setHeaderAlignment(e.target.value)} className="p-1 text-xs border rounded"><option value="left">Left Align</option><option value="center">Center Align</option></select>}</div>
+            <input name="name" value={personalInfo.name} onChange={handlePersonalInfoChange} className="md:col-span-2 w-full p-2 border rounded -mt-2 outline-none"/>
+            <input name="email" value={personalInfo.email} onChange={handlePersonalInfoChange} className="w-full p-2 border rounded outline-none" placeholder="Email"/>
+            <input name="phone" value={personalInfo.phone} onChange={handlePersonalInfoChange} className="w-full p-2 border rounded outline-none" placeholder="Phone"/>
+            <input name="location" value={personalInfo.location} onChange={handlePersonalInfoChange} className="md:col-span-2 w-full p-2 border rounded outline-none" placeholder="Location"/>
+          </div>
+          <div className="mt-4 pt-4 border-t">
+            <label className="block text-sm font-medium text-gray-600 mb-2">Social Links</label>
+            {links.map(l => <div key={l.id} className="flex gap-2 mb-2 bg-slate-50 p-2 border rounded"><input value={l.label} onChange={e=>handleArrayUpdate(setLinks, l.id, 'label', e.target.value)} className="flex-1 p-1 text-sm border rounded" placeholder="Label"/><input value={l.url} onChange={e=>handleArrayUpdate(setLinks, l.id, 'url', e.target.value)} className="flex-1 p-1 text-sm border rounded" placeholder="URL"/><button onClick={()=>handleArrayRemove(setLinks, l.id)} className="text-red-400"><Trash2 size={16}/></button></div>)}
+            <button onClick={()=>handleArrayAdd(setLinks, {label:'', url:''})} className="text-blue-600 text-sm font-medium flex items-center gap-1"><Plus size={16}/> Add Link</button>
           </div>
         </section>
 
         <div className="space-y-4">
-          {sections.map((s,i)=>(
-            <div key={s.id} className={`bg-white rounded-lg border ${activeSection===s.id?'border-slate-800 ring-1':'border-gray-200'}`} onClickCapture={()=>setActiveSection(s.id)}>
-              <div draggable onDragStart={e=>handleDragStart(e,i)} onDrop={e=>handleDrop(e,i)} onDragOver={e=>e.preventDefault()} className="p-3 border-b flex justify-between bg-slate-50 cursor-grab">
-                <span className="font-bold flex items-center gap-2"><GripVertical size={16}/>{s.title}</span>
-                <div className="flex gap-1">
-                  {template==='2-column'&&<button onClick={()=>toggleSectionColumn(s.id, s.column==='left'?'right':'left')} className="text-[10px] px-2 bg-slate-200 rounded">{s.column==='left'?'L':'R'}</button>}
-                  <button onClick={()=>toggleSectionTimeline(s.id)} className={`text-[10px] px-2 rounded ${s.timeline?'bg-blue-600 text-white':'bg-slate-200'}`}>Line</button>
-                  <button onClick={()=>toggleSectionVisibility(s.id)} className="p-1">{s.visible?<Eye size={16}/>:<EyeOff size={16}/>}</button>
+          <p className="text-sm text-gray-500 font-medium flex items-center gap-2"><GripVertical size={16}/> Drag headers to reorder.</p>
+          {sections.map((s, i) => (
+            <div key={s.id} className={`bg-white rounded-lg border overflow-hidden ${activeSection===s.id?'border-slate-800 ring-1':(s.visible?'border-blue-200':'border-gray-200 opacity-60')}`} onClickCapture={()=>setActiveSection(s.id)}>
+              <div draggable onDragStart={e=>handleDragStart(e,i)} onDrop={e=>handleDrop(e,i)} onDragOver={e=>e.preventDefault()} className={`p-3 flex items-center justify-between cursor-grab border-b ${s.visible?'bg-blue-50':'bg-gray-50'}`}>
+                <div className="flex items-center gap-2"><GripVertical size={18} className="text-slate-400"/><h2 className="font-bold text-slate-800">{s.title}</h2></div>
+                <div className="flex items-center gap-1">
+                  {template==='2-column'&&<div className="flex bg-slate-200 rounded p-0.5 mr-2"><button onClick={()=>toggleSectionColumn(s.id,'left')} className={`text-[10px] px-2 py-1 rounded-sm ${s.column==='left'?'bg-white text-blue-600 font-bold':'text-slate-500'}`}>L</button><button onClick={()=>toggleSectionColumn(s.id,'right')} className={`text-[10px] px-2 py-1 rounded-sm ${s.column==='right'?'bg-white text-blue-600 font-bold':'text-slate-500'}`}>R</button></div>}
+                  <button onClick={()=>toggleSectionTimeline(s.id)} className={`text-[10px] px-2 py-1 rounded-sm mr-2 ${s.timeline?'bg-white text-blue-600 font-bold shadow-sm':'text-slate-500'}`}>Line</button>
+                  <button onClick={()=>toggleSectionVisibility(s.id)} className={`p-1.5 rounded ${s.visible?'text-blue-600':'text-gray-400'}`}>{s.visible?<Eye size={18}/>:<EyeOff size={18}/>}</button>
                 </div>
               </div>
               {s.visible && <div className="p-4 bg-slate-50">{renderEditorSection(s.id)}</div>}
             </div>
           ))}
-          <button onClick={handleAddCustomSection} className="w-full py-3 border-2 border-dashed border-blue-300 text-blue-600 rounded-lg font-medium">+ Add Custom Section</button>
+          <button onClick={handleAddCustomSection} className="w-full py-3 border-2 border-dashed border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 font-medium flex items-center justify-center gap-2"><Plus size={18}/> Add Custom Section</button>
         </div>
       </div>
 
-      <div className="flex-1 h-full bg-gray-200 p-8 overflow-y-auto flex flex-col items-center">
-        <div className="w-full max-w-[816px] bg-white p-4 rounded-xl shadow mb-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex gap-2">
-            <button onClick={undo} disabled={historyIndex<=0} className="p-2 bg-slate-100 rounded disabled:opacity-50"><Undo2 size={18}/></button>
-            <button onClick={redo} disabled={historyIndex>=historyRef.current.length-1} className="p-2 bg-slate-100 rounded disabled:opacity-50"><Redo2 size={18}/></button>
-          </div>
-          <div className="flex gap-2 sm:gap-4 items-center flex-wrap">
-            <select value={fontFamily} onChange={e=>setFontFamily(e.target.value)} className="p-1 text-xs border rounded outline-none">
-              <option value="'Garamond', serif">Garamond</option>
-              <option value="'Times New Roman', serif">Times New Roman</option>
-              <option value="'Arial', sans-serif">Arial</option>
-              <option value="'Calibri', sans-serif">Calibri</option>
-              <option value="'Georgia', serif">Georgia</option>
-            </select>
-            <input type="number" value={fontSizeNum} onChange={e=>setFontSizeNum(Number(e.target.value))} className="w-12 border rounded p-1 text-center text-xs" />
-            <input type="color" value={themeColor} onChange={e=>setThemeColor(e.target.value)} className="w-6 h-6 sm:w-8 sm:h-8 cursor-pointer border-0 p-0 rounded bg-transparent" />
-            <button onClick={generateExactPDF} disabled={isDownloading} className="bg-yellow-400 text-yellow-900 px-4 py-2 sm:px-6 rounded-lg font-bold shadow hover:bg-yellow-500 text-sm sm:text-base">{isDownloading?'...':'Download PDF'}</button>
-          </div>
-        </div>
-
-        <div ref={previewContainerRef} className="bg-white shadow-2xl overflow-hidden shrink-0" style={{ width: '816px', height: `${pageCount * 1056}px` }}>
-          <div id="resume-preview-content" ref={innerContentRef} className="w-full h-full flex flex-col bg-white" style={{ fontFamily, color: '#0f172a' }}>
-            {template === '1-column' ? (
-              <div className="flex-1">
-                <div className={`flex ${photoAlignment==='center'?'flex-col':photoAlignment==='right'?'flex-row-reverse':'flex-row'} items-center gap-6 px-10 mb-4`} style={{ backgroundColor: themeColor, paddingTop: `${activeHeadSizeNum}px`, paddingBottom: `${activeHeadSizeNum}px` }}>
-                  {showPhoto && <div style={{width:picSizeStr,height:picSizeStr,minWidth:picSizeStr}} className="shrink-0">{photoUrl?<img src={photoUrl} className="w-full h-full rounded-full object-cover border-4 border-slate-100 shadow-sm"/>:<div className="w-full h-full rounded-full bg-slate-100 flex items-center justify-center border-4 border-slate-50"><User size={60} className="text-slate-400"/></div>}</div>}
-                  <div className={`flex-1 w-full ${headerAlignment==='center'?'text-center':'text-left'}`}><h1 style={{...sTitle, color: headHColor}} className="font-bold mb-1 break-words">{personalInfo.name}</h1><div style={{...sSm, color: headPColor}} className={`flex flex-wrap ${headerAlignment==='center'?'justify-center':'justify-start'} gap-x-5 gap-y-1`}>{personalInfo.email&&<span className="flex items-center gap-1.5"><Mail size={12}/>{personalInfo.email}</span>}{personalInfo.phone&&<span className="flex items-center gap-1.5"><Phone size={12}/>{personalInfo.phone}</span>}{personalInfo.location&&<span className="flex items-center gap-1.5"><MapPin size={12}/>{personalInfo.location}</span>}{links.map(l=>l.url&&<span key={l.id} className="flex items-center gap-1.5"><Link2 size={12}/>{l.label||l.url}</span>)}</div></div>
-                </div>
-                <div className="flex flex-col px-10 pb-10">{sections.filter(s=>s.visible).map(s=>renderPreviewSection(s.id))}</div>
-              </div>
-            ) : (
-              <div className="flex flex-row flex-1 items-stretch h-full">
-                <div className="p-8 flex flex-col border-r" style={{ backgroundColor: themeColor, width: `${activeHeadSizeNum}%`, minHeight: '100%' }}>
-                  {showPhoto && <div style={{width:picSizeStr,height:picSizeStr,minWidth:picSizeStr}} className="mb-5">{photoUrl?<img src={photoUrl} className="w-full h-full rounded-full object-cover border-4 border-white"/>:<div className="w-full h-full rounded-full bg-white flex items-center justify-center border-4 border-gray-200"><User size={60} className="text-gray-400"/></div>}</div>}
-                  <h1 style={{...sTitle, color: headHColor}} className="font-bold mb-4 leading-tight break-words">{personalInfo.name}</h1>
-                  <div className="space-y-2 mb-6" style={{color: headPColor}}>{personalInfo.email&&<div className="flex gap-3"><Mail size={12} className="mt-0.5"/><span style={sSm} className="break-all">{personalInfo.email}</span></div>}{personalInfo.phone&&<div className="flex gap-3"><Phone size={12} className="mt-0.5"/><span style={sSm}>{personalInfo.phone}</span></div>}{personalInfo.location&&<div className="flex gap-3"><MapPin size={12} className="mt-0.5"/><span style={sSm}>{personalInfo.location}</span></div>}</div>
-                  {links.some(l=>l.url)&&<div className="grid grid-cols-2 gap-2 mb-6" style={{color: headPColor}}>{links.map(l=>l.url&&<div key={l.id} className="flex gap-2"><Link2 size={12} className="mt-1"/><span style={sSm} className="break-all">{l.label||l.url}</span></div>)}</div>}
-                  {sections.filter(s=>s.visible && s.column==='left').map(s=>renderPreviewSection(s.id, 'themed'))}
-                </div>
-                <div className="p-8 flex flex-col bg-white" style={{ width: `${100 - activeHeadSizeNum}%` }}>
-                  {sections.filter(s=>s.visible && s.column==='right').map(s=>renderPreviewSection(s.id))}
-                </div>
+      <div className="flex-1 h-full bg-gray-200 p-4 lg:p-8 overflow-y-auto flex flex-col items-center">
+        <div className="w-full max-w-[816px] flex flex-col gap-4 pb-12">
+          
+          {isOverflowing && <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded flex items-start gap-3"><AlertTriangle className="text-red-500 mt-0.5" size={20}/><p className="text-red-700 text-sm">Content exceeds {pageCount}-page limit. Adjust font or layout.</p></div>}
+          
+          <div className="bg-white rounded-xl shadow p-4 border border-gray-200 shrink-0">
+            {historyRef.current.length > 1 && (
+              <div className="flex items-center gap-2 mb-4 border-b pb-4">
+                <button onClick={undo} disabled={historyIndex<=0} className="p-2 bg-slate-100 rounded disabled:opacity-50"><Undo2 size={18}/></button>
+                <button onClick={redo} disabled={historyIndex>=historyRef.current.length-1} className="p-2 bg-slate-100 rounded disabled:opacity-50"><Redo2 size={18}/></button>
               </div>
             )}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <div className="bg-slate-50 p-2 rounded border">
+                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Head Size</span>
+                <select value={headSizeSelection} onChange={e=>setHeadSizeSelection(e.target.value)} className="w-full text-xs p-1 border rounded"><option value="0">None</option><option value="32">Normal</option><option value="custom">Custom...</option></select>
+                {headSizeSelection==='custom'&&<input type="number" value={customHeadSize} onChange={e=>setCustomHeadSize(Number(e.target.value))} className="w-full mt-1 text-xs border rounded p-1"/>}
+              </div>
+              <div className="bg-slate-50 p-2 rounded border">
+                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Theme</span>
+                <div className="flex gap-2 items-center"><input type="color" value={themeColor} onChange={e=>setThemeColor(e.target.value)} className="w-6 h-6 border-0 cursor-pointer"/><select value={themeTextColor} onChange={e=>setThemeTextColor(e.target.value)} className="text-[10px] p-1 border rounded"><option value="black">Dark Txt</option><option value="white">Light Txt</option></select></div>
+              </div>
+              <div className="bg-slate-50 p-2 rounded border">
+                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Font</span>
+                <input type="number" min="8" max="16" value={fontSizeNum} onChange={e=>setFontSizeNum(Number(e.target.value))} className="w-full text-xs border rounded p-1 mb-1" />
+                <select value={fontFamily} onChange={e=>setFontFamily(e.target.value)} className="w-full text-[10px] p-1 border rounded">
+                  <option value="'Garamond', serif">Garamond</option>
+                  <option value="'Times New Roman', serif">Times New Roman</option>
+                  <option value="'Arial', sans-serif">Arial</option>
+                  <option value="'Calibri', sans-serif">Calibri</option>
+                  <option value="'Georgia', serif">Georgia</option>
+                </select>
+              </div>
+              <div className="bg-slate-50 p-2 rounded border">
+                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Pages</span>
+                <select value={pageSelection} onChange={e=>setPageSelection(e.target.value)} className="w-full text-xs p-1 border rounded"><option value="1">1</option><option value="2">2</option><option value="custom">Custom</option></select>
+                {pageSelection==='custom'&&<input type="number" value={customPageCount} onChange={e=>setCustomPageCount(Number(e.target.value))} className="w-full mt-1 text-xs border rounded p-1"/>}
+              </div>
+            </div>
+            <button onClick={generateExactPDF} disabled={isDownloading} className="w-full py-3 bg-yellow-400 text-yellow-900 rounded font-extrabold flex items-center justify-center gap-2 shadow"><Download size={20}/>{isDownloading?'Generating...':'Download PDF'}</button>
+          </div>
+
+          <div className="w-full overflow-x-auto text-center pb-12">
+            <div ref={previewContainerRef} className="inline-block text-left shadow-2xl bg-white" style={{ width: '816px', height: `${pageCount * 1056}px` }}>
+              <div id="resume-preview-content" ref={innerContentRef} className="w-full h-full flex flex-col bg-white" style={{ fontFamily, color: '#0f172a' }}>
+                {template === '1-column' ? (
+                  <div className="flex-1">
+                    <div className={`flex ${photoAlignment==='center'?'flex-col':photoAlignment==='right'?'flex-row-reverse':'flex-row'} items-center gap-6 px-10 mb-4`} style={{ backgroundColor: themeColor, paddingTop: `${activeHeadSizeNum}px`, paddingBottom: `${activeHeadSizeNum}px` }}>
+                      {showPhoto && <div style={{width:picSizeStr,height:picSizeStr,minWidth:picSizeStr}} className="shrink-0">{photoUrl?<img src={photoUrl} className="w-full h-full rounded-full object-cover border-4 border-slate-100 shadow-sm"/>:<div className="w-full h-full rounded-full bg-slate-100 flex items-center justify-center border-4 border-slate-50"><User size={60} className="text-slate-400"/></div>}</div>}
+                      <div className={`flex-1 w-full ${headerAlignment==='center'?'text-center':'text-left'}`}><h1 style={{...sTitle, color: headHColor}} className="font-bold mb-1 break-words">{personalInfo.name}</h1><div style={{...sSm, color: headPColor}} className={`flex flex-wrap ${headerAlignment==='center'?'justify-center':'justify-start'} gap-x-5 gap-y-1`}>{personalInfo.email&&<span className="flex items-center gap-1.5"><Mail size={12}/>{personalInfo.email}</span>}{personalInfo.phone&&<span className="flex items-center gap-1.5"><Phone size={12}/>{personalInfo.phone}</span>}{personalInfo.location&&<span className="flex items-center gap-1.5"><MapPin size={12}/>{personalInfo.location}</span>}{links.map(l=>l.url&&<span key={l.id} className="flex items-center gap-1.5"><Link2 size={12}/>{l.label||l.url}</span>)}</div></div>
+                    </div>
+                    <div className="flex flex-col px-10 pb-10">{sections.filter(s=>s.visible).map(s=>renderPreviewSection(s.id))}</div>
+                  </div>
+                ) : (
+                  <div className="flex flex-row flex-1 items-stretch h-full">
+                    <div className="p-8 flex flex-col border-r" style={{ backgroundColor: themeColor, width: `${activeHeadSizeNum}%`, minHeight: '100%' }}>
+                      {showPhoto && <div style={{width:picSizeStr,height:picSizeStr,minWidth:picSizeStr}} className="mb-5">{photoUrl?<img src={photoUrl} className="w-full h-full rounded-full object-cover border-4 border-white"/>:<div className="w-full h-full rounded-full bg-white flex items-center justify-center border-4 border-gray-200"><User size={60} className="text-gray-400"/></div>}</div>}
+                      <h1 style={{...sTitle, color: headHColor}} className="font-bold mb-4 leading-tight break-words">{personalInfo.name}</h1>
+                      <div className="space-y-2 mb-6" style={{color: headPColor}}>{personalInfo.email&&<div className="flex gap-3"><Mail size={12} className="mt-0.5"/><span style={sSm} className="break-all">{personalInfo.email}</span></div>}{personalInfo.phone&&<div className="flex gap-3"><Phone size={12} className="mt-0.5"/><span style={sSm}>{personalInfo.phone}</span></div>}{personalInfo.location&&<div className="flex gap-3"><MapPin size={12} className="mt-0.5"/><span style={sSm}>{personalInfo.location}</span></div>}</div>
+                      {links.some(l=>l.url)&&<div className="grid grid-cols-2 gap-2 mb-6" style={{color: headPColor}}>{links.map(l=>l.url&&<div key={l.id} className="flex gap-2"><Link2 size={12} className="mt-1"/><span style={sSm} className="break-all">{l.label||l.url}</span></div>)}</div>}
+                      {sections.filter(s=>s.visible && s.column==='left').map(s=>renderPreviewSection(s.id, 'themed'))}
+                    </div>
+                    <div className="p-8 flex flex-col bg-white" style={{ width: `${100 - activeHeadSizeNum}%` }}>
+                      {sections.filter(s=>s.visible && s.column==='right').map(s=>renderPreviewSection(s.id))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -7,18 +7,32 @@ import ResumeEditor from './pages/ResumeEditor';
 import Footer from './components/Footer';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('home');
-  const [template, setTemplate] = useState(null);
-  const [userEmail, setUserEmail] = useState('');
-  const [userFullName, setUserFullName] = useState('');
+  // 1. Initialize state from localStorage so refresh doesn't reset to 'home'
+  const [currentPage, setCurrentPage] = useState(() => {
+    return localStorage.getItem('lastVisitedPage') || 'home';
+  });
+  
+  const [template, setTemplate] = useState(() => {
+    return localStorage.getItem('selectedTemplate') || null;
+  });
+
+  const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
+  const [userFullName, setUserFullName] = useState(localStorage.getItem('userFullName') || '');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is logged in on mount
+  // 2. Save page state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('lastVisitedPage', currentPage);
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (template) localStorage.setItem('selectedTemplate', template);
+  }, [template]);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      // In a real app, you'd fetch the user profile here to get the name/email
-      // For now, we assume if token exists, they are valid
+      // In a real app, verify token here
     }
     setIsLoading(false);
   }, []);
@@ -26,19 +40,24 @@ export default function App() {
   const handleLogin = (email, fullName) => {
     setUserEmail(email);
     setUserFullName(fullName);
+    localStorage.setItem('userEmail', email);
+    localStorage.setItem('userFullName', fullName);
     setCurrentPage('templates');
   };
 
   const handleSignUp = (email, fullName) => {
     setUserEmail(email);
     setUserFullName(fullName);
+    localStorage.setItem('userEmail', email);
+    localStorage.setItem('userFullName', fullName);
     setCurrentPage('templates');
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.clear(); // Clears token, page state, and user info
     setUserEmail('');
     setUserFullName('');
+    setTemplate(null);
     setCurrentPage('home');
   };
 
@@ -50,7 +69,6 @@ export default function App() {
     );
   }
 
-  // Routing Logic
   const renderPage = () => {
     switch (currentPage) {
       case 'login':
@@ -75,7 +93,7 @@ export default function App() {
             <div className="flex-grow">
               <TemplatesPage
                 userEmail={userEmail}
-                userName={userFullName} // Passing full name; TemplatePage splits it
+                userName={userFullName}
                 onSelect={(tmpl) => {
                   setTemplate(tmpl);
                   setCurrentPage('editor');

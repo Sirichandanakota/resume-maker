@@ -1,6 +1,5 @@
 import React from 'react';
 import { FileText, LogOut, User } from 'lucide-react';
-import Footer from '../components/Footer'; // Adjust this path if your folder structure is different
 
 // --- ANIMATED MOCKUP COMPONENTS ---
 const Mockup1Column = () => (
@@ -144,9 +143,6 @@ export default function HomePage({ userEmail, onLogout, onNavigate }) {
           <Mockup2Column />
         </div>
       </main>
-
-      {/* FOOTER IMPORT */}
-      <Footer />
     </div>
   );
 }

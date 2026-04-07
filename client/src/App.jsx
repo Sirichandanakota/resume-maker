@@ -7,48 +7,82 @@ import ResumeEditor from './pages/ResumeEditor';
 import Footer from './components/Footer';
 
 export default function App() {
-  // We do NOT initialize currentPage from localStorage here 
-  // so that refresh = back to home (as you requested).
-  const [currentPage, setCurrentPage] = useState('home');
-  
-  // These stay in memory for the session
-  const [template, setTemplate] = useState(null);
-  const [userEmail, setUserEmail] = useState('');
-  const [userFullName, setUserFullName] = useState('');
+  // --- STATE PERSISTENCE LOGIC ---
+  // We initialize from localStorage so refresh doesn't reset the app
+  const [currentPage, setCurrentPage] = useState(() => {
+    return localStorage.getItem('RM_current_page') || 'home';
+  });
+
+  const [template, setTemplate] = useState(() => {
+    return localStorage.getItem('RM_selected_template') || null;
+  });
+
+  const [userEmail, setUserEmail] = useState(() => {
+    return localStorage.getItem('RM_user_email') || '';
+  });
+
+  const [userFullName, setUserFullName] = useState(() => {
+    return localStorage.getItem('RM_user_fullname') || '';
+  });
+
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- PERSISTENCE EFFECT ---
+  // Every time a state changes, we mirror it to localStorage
   useEffect(() => {
-    // Check for existing token to keep user "logged in" session-wise
-    const token = localStorage.getItem('token');
-    if (token) {
-      // In a real app, you'd fetch the user's name/email here
+    localStorage.setItem('RM_current_page', currentPage);
+    localStorage.setItem('RM_user_email', userEmail);
+    localStorage.setItem('RM_user_fullname', userFullName);
+    if (template) {
+      localStorage.setItem('RM_selected_template', template);
     }
+  }, [currentPage, userEmail, userFullName, template]);
+
+  useEffect(() => {
+    // Initial load check
     setIsLoading(false);
   }, []);
 
-  const handleLoginSuccess = (email, fullName) => {
+  const handleLogin = (email, fullName) => {
     setUserEmail(email);
     setUserFullName(fullName);
     setCurrentPage('templates');
   };
 
   const handleLogout = () => {
+    // Clear all persistence data on manual logout
     localStorage.removeItem('token');
-    // We clear editor data on manual logout
+    localStorage.removeItem('RM_current_page');
+    localStorage.removeItem('RM_user_email');
+    localStorage.removeItem('RM_user_fullname');
+    localStorage.removeItem('RM_selected_template');
+    
+    // Also clear the actual resume data stored by the Editor
     localStorage.removeItem('ResumeMaker_Shared_Data'); 
+
     setUserEmail('');
     setUserFullName('');
+    setTemplate(null);
     setCurrentPage('home');
   };
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white text-blue-600 font-bold">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
+  // --- SELECTIVE SCROLLING WRAPPER ---
+  // Pages like Home and Auth should usually not scroll (fixed height), 
+  // while Templates and Editor need to scroll.
   const renderPage = () => {
     switch (currentPage) {
       case 'login':
         return (
           <LoginPage 
-            onLogin={handleLoginSuccess} 
+            onLogin={handleLogin} 
             onSwitchToSignUp={() => setCurrentPage('signup')} 
             onBack={() => setCurrentPage('home')} 
           />
@@ -56,7 +90,7 @@ export default function App() {
       case 'signup':
         return (
           <SignUpPage 
-            onSignUp={handleLoginSuccess} 
+            onSignUp={handleLogin} 
             onSwitchToLogin={() => setCurrentPage('login')} 
             onBack={() => setCurrentPage('home')} 
           />
@@ -66,11 +100,11 @@ export default function App() {
           <div className="flex flex-col min-h-screen">
             <div className="flex-grow">
               <TemplatesPage 
-                userEmail={userEmail} 
-                userName={userFullName} 
-                onSelect={(tmpl) => { setTemplate(tmpl); setCurrentPage('editor'); }} 
-                onLogout={handleLogout} 
-                onBack={() => setCurrentPage('home')} 
+                userEmail={userEmail}
+                userName={userFullName ? userFullName.split(' ')[0] : 'User'}
+                onSelect={(tmpl) => { setTemplate(tmpl); setCurrentPage('editor'); }}
+                onLogout={handleLogout}
+                onBack={() => setCurrentPage('home')}
               />
             </div>
             <Footer />
@@ -79,11 +113,11 @@ export default function App() {
       case 'editor':
         return (
           <ResumeEditor 
-            key={template} 
-            template={template} 
-            userFullName={userFullName} 
-            userEmail={userEmail} 
-            onBack={() => setCurrentPage('templates')} 
+            key={template}
+            template={template}
+            userFullName={userFullName}
+            userEmail={userEmail}
+            onBack={() => setCurrentPage('templates')}
           />
         );
       default:
@@ -91,9 +125,9 @@ export default function App() {
           <div className="flex flex-col min-h-screen">
             <div className="flex-grow">
               <HomePage 
-                userEmail={userEmail} 
-                onLogout={handleLogout} 
-                onNavigate={(p) => setCurrentPage(p)} 
+                userEmail={userEmail}
+                onLogout={handleLogout}
+                onNavigate={(page) => setCurrentPage(page)}
               />
             </div>
             <Footer />
@@ -102,5 +136,5 @@ export default function App() {
     }
   };
 
-  return renderPage();
+  return <>{renderPage()}</>;
 }

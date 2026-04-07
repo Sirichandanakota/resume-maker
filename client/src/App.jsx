@@ -7,23 +7,35 @@ import ResumeEditor from './pages/ResumeEditor';
 import Footer from './components/Footer';
 
 export default function App() {
+  // --- PERSISTENCE INITIALIZATION ---
+  // We check localStorage immediately so a refresh keeps the user on the same page
   const [currentPage, setCurrentPage] = useState(() => {
-    const savedPage = localStorage.getItem('RM_current_page');
-    // If refreshed on login/signup, reset to home. Otherwise, keep the page.
-    if (savedPage === 'login' || savedPage === 'signup') return 'home';
-    return savedPage || 'home';
+    return localStorage.getItem('RM_current_page') || 'home';
   });
 
-  const [template, setTemplate] = useState(() => localStorage.getItem('RM_selected_template') || null);
-  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('RM_user_email') || '');
-  const [userFullName, setUserFullName] = useState(() => localStorage.getItem('RM_user_fullname') || '');
+  const [template, setTemplate] = useState(() => {
+    return localStorage.getItem('RM_selected_template') || null;
+  });
+
+  const [userEmail, setUserEmail] = useState(() => {
+    return localStorage.getItem('RM_user_email') || '';
+  });
+
+  const [userFullName, setUserFullName] = useState(() => {
+    return localStorage.getItem('RM_user_fullname') || '';
+  });
+
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- PERSISTENCE EFFECT ---
+  // This "Watcher" saves every state change to the browser memory
   useEffect(() => {
     localStorage.setItem('RM_current_page', currentPage);
     localStorage.setItem('RM_user_email', userEmail);
     localStorage.setItem('RM_user_fullname', userFullName);
-    if (template) localStorage.setItem('RM_selected_template', template);
+    if (template) {
+      localStorage.setItem('RM_selected_template', template);
+    }
   }, [currentPage, userEmail, userFullName, template]);
 
   useEffect(() => {
@@ -37,26 +49,46 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    // Clear all persistence data on manual logout
     localStorage.removeItem('token');
     localStorage.removeItem('RM_current_page');
     localStorage.removeItem('RM_user_email');
     localStorage.removeItem('RM_user_fullname');
     localStorage.removeItem('RM_selected_template');
     localStorage.removeItem('ResumeMaker_Shared_Data'); 
+
     setUserEmail('');
     setUserFullName('');
     setTemplate(null);
     setCurrentPage('home');
   };
 
-  if (isLoading) return <div className="min-h-screen bg-white" />;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   const renderPage = () => {
     switch (currentPage) {
       case 'login':
-        return <LoginPage onLogin={handleLogin} onSwitchToSignUp={() => setCurrentPage('signup')} onBack={() => setCurrentPage('home')} />;
+        return (
+          <LoginPage 
+            onLogin={handleLogin} 
+            onSwitchToSignUp={() => setCurrentPage('signup')} 
+            onBack={() => setCurrentPage('home')} 
+          />
+        );
       case 'signup':
-        return <SignUpPage onSignUp={handleLogin} onSwitchToLogin={() => setCurrentPage('login')} onBack={() => setCurrentPage('home')} />;
+        return (
+          <SignUpPage 
+            onSignUp={handleLogin} 
+            onSwitchToLogin={() => setCurrentPage('login')} 
+            onBack={() => setCurrentPage('home')} 
+          />
+        );
       case 'templates':
         return (
           <div className="flex flex-col min-h-screen">
@@ -73,12 +105,24 @@ export default function App() {
           </div>
         );
       case 'editor':
-        return <ResumeEditor key={template} template={template} userFullName={userFullName} userEmail={userEmail} onBack={() => setCurrentPage('templates')} />;
+        return (
+          <ResumeEditor 
+            key={template}
+            template={template}
+            userFullName={userFullName}
+            userEmail={userEmail}
+            onBack={() => setCurrentPage('templates')}
+          />
+        );
       default:
         return (
           <div className="flex flex-col min-h-screen">
             <div className="flex-grow">
-              <HomePage userEmail={userEmail} onLogout={handleLogout} onNavigate={(p) => setCurrentPage(p)} />
+              <HomePage 
+                userEmail={userEmail}
+                onLogout={handleLogout}
+                onNavigate={(page) => setCurrentPage(page)}
+              />
             </div>
             <Footer />
           </div>

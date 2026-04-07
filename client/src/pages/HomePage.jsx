@@ -93,15 +93,14 @@ export default function HomePage({ userEmail, onLogout, onNavigate }) {
   };
 
   return (
-    // Changed to h-screen and overflow-hidden to completely stop scrolling
     <div className="h-screen w-full bg-white font-sans flex flex-col overflow-hidden">
       
-      {/* HEADER - Kept compact so it doesn't take up too much vertical space */}
+      {/* HEADER */}
       <header className="flex-none flex justify-between items-center px-4 py-3 sm:px-6 sm:py-4 bg-white border-b border-gray-100 z-20">
         <div className="flex items-center gap-1.5 sm:gap-2 text-blue-800 font-bold text-xl sm:text-2xl tracking-tight cursor-pointer" onClick={() => onNavigate('home')}>
           <FileText className="text-blue-500 w-6 h-6 sm:w-7 sm:h-7" /> 
-          <span className="hidden xs:inline">ResumeMaker</span>
-          <span className="xs:hidden">RM</span>
+          {/* Always says ResumeMaker, never RM */}
+          <span>ResumeMaker</span>
         </div>
         
         <div className="flex items-center gap-3 sm:gap-4">
@@ -126,10 +125,10 @@ export default function HomePage({ userEmail, onLogout, onNavigate }) {
         </div>
       </header>
       
-      {/* MAIN CONTENT - Uses flex-1 to fill exact remaining space without pushing off-screen */}
-      <main className="flex-1 flex flex-col lg:flex-row items-center justify-center max-w-7xl mx-auto px-4 sm:px-6 w-full gap-4 lg:gap-16">
+      {/* MAIN CONTENT */}
+      <main className="flex-1 flex flex-col lg:flex-row items-center justify-center max-w-7xl mx-auto px-4 sm:px-6 w-full lg:gap-16">
         
-        {/* TEXT SECTION - Shrinks on mobile to save space */}
+        {/* TEXT SECTION */}
         <div className="w-full lg:w-1/2 space-y-2 sm:space-y-4 lg:space-y-6 z-10 text-center lg:text-left flex-shrink-0 pt-4 lg:pt-0">
           <h2 className="text-blue-700 font-bold text-xs sm:text-sm lg:text-xl tracking-wide uppercase">Fast. Easy. Effective.</h2>
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 leading-tight">
@@ -138,26 +137,37 @@ export default function HomePage({ userEmail, onLogout, onNavigate }) {
           <p className="text-gray-600 text-sm sm:text-base md:text-xl leading-relaxed max-w-xl mx-auto lg:mx-0 px-2 sm:px-0">
             Create a professional resume in minutes. Stand out to recruiters and land your dream job with ease.
           </p>
-          <div className="pt-2 sm:pt-4">
+          
+          {/* DESKTOP BUTTON - Hidden on Mobile, Shows under text on Desktop */}
+          <div className="hidden lg:block pt-4">
             <button 
               onClick={handleCreateCV} 
-              className="w-[90%] sm:w-auto bg-yellow-400 text-yellow-900 font-extrabold px-8 py-3 lg:px-10 lg:py-4 rounded-full hover:bg-yellow-500 shadow-lg text-sm sm:text-lg transition-transform hover:scale-105 active:scale-95 text-center mx-auto lg:mx-0 block"
+              className="bg-yellow-400 text-yellow-900 font-extrabold px-10 py-4 rounded-full hover:bg-yellow-500 shadow-lg text-lg transition-transform hover:scale-105 active:scale-95 text-center"
             >
               Create new CV
             </button>
           </div>
         </div>
         
-        {/* MOCKUPS SECTION - Dynamically scales down based on screen height */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center flex-1 min-h-0 pb-4 lg:pb-0">
-          {/* This wrapper keeps the aspect ratio correct but squishes it to fit */}
-          <div className="relative w-full max-w-[240px] sm:max-w-[320px] lg:max-w-[420px] aspect-[1/1.1]">
+        {/* MOCKUPS SECTION - Dynamically shrinks to prevent scrolling */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center flex-1 min-h-0 pt-4 lg:pt-0">
+          <div className="relative w-full max-w-[220px] sm:max-w-[320px] lg:max-w-[420px] aspect-[1/1.1]">
             <div className="absolute top-0 right-0 w-32 h-32 lg:w-64 lg:h-64 bg-pink-100 rounded-full -z-10 blur-2xl opacity-60 translate-x-10 -translate-y-5"></div>
             <div className="absolute bottom-0 left-0 w-40 h-40 lg:w-72 lg:h-72 bg-blue-100 rounded-full -z-10 blur-2xl opacity-60 -translate-x-10 translate-y-10"></div>
             
             <Mockup1Column />
             <Mockup2Column />
           </div>
+        </div>
+
+        {/* MOBILE BUTTON - Shows under images on Mobile, Hidden on Desktop */}
+        <div className="block lg:hidden w-full flex-none pb-6 pt-4">
+            <button 
+              onClick={handleCreateCV} 
+              className="w-full sm:w-[80%] mx-auto block bg-yellow-400 text-yellow-900 font-extrabold px-8 py-3.5 sm:py-4 rounded-full hover:bg-yellow-500 shadow-lg text-base sm:text-lg transition-transform hover:scale-105 active:scale-95 text-center"
+            >
+              Create new CV
+            </button>
         </div>
         
       </main>

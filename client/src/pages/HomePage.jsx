@@ -135,7 +135,7 @@ export default function HomePage({ userEmail, onLogout, onNavigate }) {
             ResumeMaker.<br className="hidden lg:block"/> The Best CV Maker Online.
           </h1>
           <p className="text-gray-600 text-base sm:text-lg md:text-xl leading-relaxed max-w-2xl mx-auto lg:mx-0 px-2 sm:px-0">
-            Build a professional, eye-catching resume from scratch in minutes. Let ResumeMaker help you present your skills and experience perfectly to land your dream job.
+            Create a professional resume in minutes. Highlight your skills with modern, eye-catching layouts designed to get you noticed.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 pt-4 sm:pt-6 justify-center lg:justify-start px-4 sm:px-0">
             <button 

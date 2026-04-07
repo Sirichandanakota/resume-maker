@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, ChevronRight, ArrowLeft, FileText } from 'lucide-react';
+import { Lock, ChevronRight, ArrowLeft, FileText, AlertCircle } from 'lucide-react';
 import { authAPI } from '../services/api';
 
 export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
@@ -11,12 +11,12 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
-    setError('');
+    setError(''); // Clear previous error
     setLoading(true);
 
     try {
       if (!name || !email || !password) {
-        setError('Please fill in all fields');
+        setError('All fields are required.');
         setLoading(false);
         return;
       }
@@ -25,18 +25,13 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
       
       if (response?.data?.token) {
         localStorage.setItem('token', response.data.token);
+        const fullName = response.data.name || name;
+        onLogin(email, fullName);
       }
-      
-      // Use the name from response if available, otherwise use input name
-      const fullName = response?.data?.name || name;
-      const firstName = fullName.trim().split(' ')[0];
-      
-      // Navigate only on success
-      onLogin(email, fullName); // Pass full name to App.jsx to save in state
-
     } catch (err) {
       console.error("Login Error:", err);
-      setError(err?.response?.data?.error || 'Invalid credentials. Please try again.');
+      // The error is set here and WILL stay because we don't navigate away
+      setError(err.response?.data?.error || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -44,11 +39,7 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
 
   return (
     <div className="min-h-screen flex font-sans bg-white relative">
-      <button 
-        type="button" 
-        onClick={onBack} 
-        className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 text-slate-700 hover:text-blue-600 font-bold z-20 bg-white/80 px-4 py-2 rounded-full shadow-sm backdrop-blur transition-all text-sm sm:text-base"
-      >
+      <button type="button" onClick={onBack} className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 text-slate-700 hover:text-blue-600 font-bold z-20 bg-white/80 px-4 py-2 rounded-full shadow-sm backdrop-blur transition-all text-sm sm:text-base">
         <ArrowLeft size={18} /> <span>Back to Home</span>
       </button>
 
@@ -63,34 +54,36 @@ export default function LoginPage({ onLogin, onSwitchToSignUp, onBack }) {
 
       <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 bg-slate-50">
         <div className="w-full max-w-md bg-white p-6 sm:p-10 rounded-3xl shadow-xl border border-slate-100 mt-12 lg:mt-0">
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100">
               <Lock size={28} className="text-blue-600" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">Welcome Back</h1>
-            <p className="text-slate-500 font-medium">Sign in to your account</p>
+            <p className="text-slate-500 font-medium text-sm sm:text-base">Sign in to your account</p>
           </div>
 
+          {/* PERMANENT ERROR BOX - Stays until handleSubmit runs again */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm font-medium text-center">{error}</p>
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
+              <AlertCircle className="text-red-500 shrink-0" size={20} />
+              <p className="text-red-700 text-sm font-semibold">{error}</p>
             </div>
           )}
           
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Full Name</label>
-              <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full p-3 sm:p-3.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium bg-slate-50 focus:bg-white text-sm sm:text-base" placeholder="Enter your full name" />
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Full Name</label>
+              <input type="text" required value={name} onChange={(e) => {setName(e.target.value); if(error) setError('');}} className="w-full p-3 sm:p-3.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium bg-slate-50 focus:bg-white text-sm sm:text-base" placeholder="Enter your full name" />
             </div>
             
             <div>
-              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Email Address</label>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3 sm:p-3.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium bg-slate-50 focus:bg-white text-sm sm:text-base" placeholder="username@example.com" />
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Email Address</label>
+              <input type="email" required value={email} onChange={(e) => {setEmail(e.target.value); if(error) setError('');}} className="w-full p-3 sm:p-3.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium bg-slate-50 focus:bg-white text-sm sm:text-base" placeholder="username@example.com" />
             </div>
             
             <div>
-              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Password</label>
-              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 sm:p-3.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium bg-slate-50 focus:bg-white text-sm sm:text-base" placeholder="Enter Password" />
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Password</label>
+              <input type="password" required value={password} onChange={(e) => {setPassword(e.target.value); if(error) setError('');}} className="w-full p-3 sm:p-3.5 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-medium bg-slate-50 focus:bg-white text-sm sm:text-base" placeholder="Enter Password" />
             </div>
             
             <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 sm:py-4 px-4 rounded-xl flex items-center justify-center gap-2 transition-all mt-4 shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed">

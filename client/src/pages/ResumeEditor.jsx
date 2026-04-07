@@ -641,3 +641,10 @@ export default function ResumeEditor({ template, userFullName, userEmail, onBack
         </ul>
 
       );
+
+    }
+
+    return <p style={{...size, color}} className="whitespace-pre-wrap leading-relaxed mt-1">{desc}</p>;
+
+  };
+

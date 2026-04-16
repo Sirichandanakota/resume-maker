@@ -6,7 +6,7 @@
 ![React](https://img.shields.io/badge/React-18-blue)
 
 ## Live Demo
-🚀 **Frontend**: https://resume-maker.netlify.app  
+🚀 **Frontend**: https://resume-maker-co.netlify.app/
 🔗 **Backend**: https://resume-maker-backend.onrender.com  
 📊 **Database**: MongoDB Atlas (resumemaker.myex2ke.mongodb.net)
 
